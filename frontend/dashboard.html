@@ -544,7 +544,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         ⚠️ Alertas
         <span class="alert-count" id="alertCount">0</span>
       </button>
+      <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-right:4px"></div>
       <button class="btn-icon btn-refresh" onclick="refreshCurrent()">↻ Atualizar</button>
+      <button class="btn-icon" onclick="logout()" style="color:var(--text3)">⎋ Sair</button>
       <div class="export-wrap">
         <button class="btn-icon" onclick="toggleExport(event)">⬇ Exportar ▾</button>
         <div class="export-menu" id="exportMenu">
@@ -711,14 +713,16 @@ function delta(curr, prev) {
   return pct.toFixed(1);
 }
 
-async function apiFetch(token, path, params={}) {
-  const url=new URL(`${API}/${path}`);
-  url.searchParams.set('access_token',token);
+function getToken(){ return localStorage.getItem('pa_token')||''; }
+function authHeaders(){ return {'Content-Type':'application/json','Authorization':'Bearer '+getToken()}; }
+async function backendFetch(path, params={}) {
+  const url=new URL('/api'+path, window.location.origin);
   Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-  const r=await fetch(url.toString());
-  const d=await r.json();
-  if(d.error) throw new Error(d.error.message);
-  return d;
+  const r=await fetch(url.toString(),{headers:authHeaders()});
+  const data=await r.json();
+  if(r.status===401){localStorage.clear();window.location.href='/';throw new Error('Sessão expirada');}
+  if(!r.ok) throw new Error(data.error||'Erro na requisição');
+  return data;
 }
 
 function destroyChart(id) {
@@ -785,8 +789,13 @@ async function connectAccount() {
   btn.innerHTML='<div class="spinner" style="width:14px;height:14px;border-width:2px;border-color:rgba(255,255,255,0.3);border-top-color:#fff"></div> Verificando...';
   btn.disabled=true;
   try {
-    const accInfo=await apiFetch(token,accId,{fields:'name,account_status,currency'});
-    S.accounts.push({id:Date.now(),name,manager,token,accId,color:S.color,currency:accInfo.currency||'USD',status:'loading',insights:null,prevInsights:null,campaigns:null,adsets:null,dailyData:null,error:''});
+    const result = await fetch('/api/accounts', {
+      method:'POST', headers: authHeaders(),
+      body: JSON.stringify({name, manager, account_id: accId, token, color: S.color})
+    });
+    const data = await result.json();
+    if(!result.ok) throw new Error(data.error);
+    S.accounts.push({id:data.id, name:data.name, manager:data.manager||'', accId:data.account_id, color:data.color||S.color, currency:data.currency||'USD', status:'loading', insights:null, prevInsights:null, campaigns:null, adsets:null, dailyData:null, error:''});
     if(S.active===null) S.active=0;
     closeModal(); updateManagerDL(); renderSidebar();
     await loadAccountData(S.accounts.length-1);
@@ -802,42 +811,14 @@ async function loadAccountData(idx) {
   const acc=S.accounts[idx]; if(!acc)return;
   acc.status='loading'; renderSidebar();
   const {since,until}=getPeriodDates(S.period,S.customFrom,S.customTo);
-  const tr=JSON.stringify({since,until});
   try {
-    const [insRes,campRes,adsetRes,dailyRes]=await Promise.all([
-      apiFetch(acc.token,acc.accId+'/insights',{
-        fields:'impressions,clicks,spend,reach,cpm,cpc,ctr,actions,cost_per_action_type',
-        time_range:tr,level:'account'
-      }),
-      apiFetch(acc.token,acc.accId+'/campaigns',{
-        fields:`name,status,objective,insights.time_range(${tr}){spend,impressions,clicks,ctr,cpc,cpm,actions,reach,frequency}`,
-        limit:50
-      }),
-      apiFetch(acc.token,acc.accId+'/adsets',{
-        fields:`name,status,daily_budget,insights.time_range(${tr}){spend,impressions,clicks,ctr,cpc,frequency,reach}`,
-        limit:50
-      }),
-      apiFetch(acc.token,acc.accId+'/insights',{
-        fields:'spend,impressions,clicks,ctr,cpc',
-        time_range:tr,time_increment:1,level:'account'
-      }).catch(()=>({data:[]})),
-    ]);
-    acc.insights=insRes.data?.[0]||null;
-    acc.campaigns=campRes.data||[];
-    acc.adsets=adsetRes.data||[];
-    acc.dailyData=dailyRes.data||[];
-
-    // prev period comparison
-    const prev=getPrevPeriodDates(since,until);
-    try {
-      const prevRes=await apiFetch(acc.token,acc.accId+'/insights',{
-        fields:'impressions,clicks,spend,cpm,cpc,ctr,actions',
-        time_range:JSON.stringify({since:prev.since,until:prev.until}),
-        level:'account'
-      });
-      acc.prevInsights=prevRes.data?.[0]||null;
-    } catch(e){ acc.prevInsights=null; }
-
+    const data = await backendFetch(`/meta/${acc.id}/all`, {since,until});
+    acc.insights=data.insights;
+    acc.campaigns=data.campaigns||[];
+    acc.adsets=data.adsets||[];
+    acc.dailyData=data.dailyData||[];
+    acc.prevInsights=data.prevInsights;
+    acc.currency=data.currency||acc.currency||'USD';
     acc.status='ok';
   } catch(e){ acc.status='error'; acc.error=e.message; }
   generateAlerts();
@@ -1025,6 +1006,8 @@ function renderManagerList(filter='') {
 function setActive(v) { S.active=v; renderSidebar(); renderMain(); }
 function removeAcc(idx,e) {
   e.stopPropagation();
+  const acc=S.accounts[idx];
+  fetch('/api/accounts/'+acc.id,{method:'DELETE',headers:authHeaders()}).catch(()=>{});
   S.accounts.splice(idx,1);
   if(typeof S.active==='number'&&S.active>=S.accounts.length) S.active=S.accounts.length>0?0:null;
   updateManagerDL(); generateAlerts(); renderSidebar(); renderMain();
@@ -1502,6 +1485,36 @@ document.getElementById('dateTo').value=td;
 // ════════════════════════════════════════════════════
 renderSidebar();
 renderMain();
+
+async function initDashboard() {
+  try {
+    const meData = await backendFetch('/auth/me');
+    const u = meData.user;
+    const userInfoEl = document.getElementById('userInfo');
+    if(userInfoEl) userInfoEl.innerHTML = `
+      <span style="font-size:12px;color:var(--text2)">${esc(u.name)}</span>
+      <span style="font-size:10px;background:var(--blue-glow);color:var(--blue);padding:2px 8px;border-radius:100px;font-weight:600;text-transform:uppercase">${u.plan}</span>
+      ${u.role==='admin'?'<a href="/admin.html" style="font-size:11px;color:var(--amber);text-decoration:none;padding:4px 8px;border:1px solid rgba(251,191,36,0.3);border-radius:6px">Admin</a>':''}
+    `;
+    const accounts = await backendFetch('/accounts');
+    S.accounts = accounts.map(a => ({
+      id: a.id, name: a.name, manager: a.manager||'',
+      accId: a.account_id, color: a.color, currency: a.currency||'USD',
+      status: 'loading', insights:null, prevInsights:null, campaigns:null, adsets:null, dailyData:null, error:''
+    }));
+    if(S.accounts.length>0) S.active=0;
+    renderSidebar(); renderMain();
+    await loadAll();
+  } catch(e) {
+    if(e.message==='Sessão expirada') return;
+    console.error('Init error:', e);
+    renderSidebar(); renderMain();
+  }
+}
+
+function logout() { localStorage.clear(); window.location.href='/'; }
+
+initDashboard();
 </script>
 </body>
 </html>
