@@ -1348,7 +1348,12 @@ function campaignsTable(camps, tableId, currency, accIdx) {
       <td class="td-name" title="${esc(c.name)}">${esc(c.name)}</td>
       <td><span class="pill ${sc}" id="camp-pill-${c.id}">${sl}</span></td>
       <td><span class="obj-tag">${(c.objective||'').replace(/_/g,' ')}</span></td>
-      <td class="num">${fC(i.spend,currency)}</td>
+      <td class="num">
+        <div style="display:flex;align-items:center;gap:4px">
+          ${fC(i.spend,currency)}
+          <button class="btn-tbl" onclick="openBudgetModal('${c.id}',${c.daily_budget?parseFloat(c.daily_budget)/100:0},'${currency}',${JSON.stringify(accIdx)},'campaign')" title="Editar orcamento" style="padding:2px 6px;font-size:11px">✏️</button>
+        </div>
+      </td>
       <td class="num">${fN(i.impressions)}</td>
       <td class="num">${fN(i.clicks)}</td>
       <td class="num">${fP(i.ctr)}</td>
@@ -1392,13 +1397,13 @@ function adsetsTable(adsets, tableId, currency, accIdx) {
     return `<tr id="adset-row-${s.id}">
       <td class="td-name" title="${esc(s.name)}">${esc(s.name)}</td>
       <td><span class="pill ${sc}" id="adset-pill-${s.id}">${sl}</span></td>
+      <td class="num"><span id="adset-bud-${s.id}">${bud}</span></td>
       <td class="num">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span id="adset-bud-${s.id}">${bud}</span>
-          <button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)},'adset')" title="Editar orçamento" style="font-size:12px">✏️</button>
+        <div style="display:flex;align-items:center;gap:4px">
+          ${fC(i.spend,currency)}
+          <button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)},'adset')" title="Editar orcamento" style="padding:2px 6px;font-size:11px">✏️</button>
         </div>
       </td>
-      <td class="num">${fC(i.spend,currency)}</td>
       <td class="num">${fN(i.impressions)}</td>
       <td class="num">${fN(i.clicks)}</td>
       <td class="num">${fP(i.ctr)}</td>
@@ -1519,6 +1524,59 @@ async function initDashboard() {
 function logout() { localStorage.clear(); window.location.href='/'; }
 
 initDashboard();
+
+function openBudgetModal(itemId, currentBudget, currency, accIdx, type) {
+  type = type || 'adset';
+  document.getElementById('budgetAdsetId').value = itemId;
+  document.getElementById('budgetAccIdx').value = accIdx;
+  document.getElementById('budgetCurrency').value = currency;
+  document.getElementById('budgetType').value = type;
+  document.getElementById('budgetValue').value = currentBudget > 0 ? parseFloat(currentBudget).toFixed(2) : '';
+  var cur = currentBudget > 0 ? parseFloat(currentBudget) : 0;
+  document.getElementById('budgetModalSub').textContent = cur > 0 ? 'Atual: ' + fC(cur, currency) + '/dia' : 'Sem orcamento definido';
+  document.getElementById('budgetErr').style.display = 'none';
+  document.getElementById('budgetOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('budgetValue').focus(); }, 100);
+}
+
+async function saveBudget() {
+  var itemId = document.getElementById('budgetAdsetId').value;
+  var accIdx = parseInt(document.getElementById('budgetAccIdx').value);
+  var daily_budget = document.getElementById('budgetValue').value;
+  var type = document.getElementById('budgetType').value || 'adset';
+  var acc = S.accounts[accIdx];
+  var errEl = document.getElementById('budgetErr');
+  var btn = document.getElementById('btnSaveBudget');
+  errEl.style.display = 'none';
+  if (!daily_budget || parseFloat(daily_budget) <= 0) {
+    errEl.textContent = 'Informe um valor valido maior que zero.';
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
+  try {
+    var endpoint = type === 'campaign'
+      ? '/api/meta/' + acc.id + '/campaigns/' + itemId + '/budget'
+      : '/api/meta/' + acc.id + '/adsets/' + itemId + '/budget';
+    var r = await fetch(endpoint, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ daily_budget: daily_budget })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    var budEl = document.getElementById('adset-bud-' + itemId);
+    if (budEl) budEl.textContent = fC(parseFloat(daily_budget), acc.currency) + '/dia';
+    document.getElementById('budgetOverlay').classList.remove('open');
+    alert('Orcamento atualizado: ' + fC(parseFloat(daily_budget), acc.currency) + '/dia');
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message;
+    errEl.style.display = 'block';
+  }
+  btn.textContent = 'Salvar orcamento';
+  btn.disabled = false;
+}
 </script>
 </body>
 </html>
