@@ -7,12 +7,26 @@ const { decrypt } = require('../utils/crypto');
 const router = express.Router();
 const META_API = 'https://graph.facebook.com/v19.0';
 
-// Helper: fetch from Meta API using decrypted token
+// Helper: GET from Meta API
 async function metaFetch(token, path, params = {}) {
   const url = new URL(`${META_API}/${path}`);
   url.searchParams.set('access_token', token);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
   const r = await fetch(url.toString());
+  const data = await r.json();
+  if (data.error) throw new Error(data.error.message);
+  return data;
+}
+
+// Helper: POST/update to Meta API
+async function metaPost(token, path, body = {}) {
+  const url = new URL(`${META_API}/${path}`);
+  url.searchParams.set('access_token', token);
+  const r = await fetch(url.toString(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
   const data = await r.json();
   if (data.error) throw new Error(data.error.message);
   return data;
@@ -122,4 +136,56 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
   } catch(e) { res.status(400).json({ error: e.message }); }
 });
 
+
+// Helper (moved here to avoid hoisting issues)
+function getAccountToken(accountId, userId) {
+  const db = getDb();
+  const acc = db.prepare('SELECT * FROM meta_accounts WHERE id = ? AND user_id = ? AND active = 1').get(accountId, userId);
+  if (!acc) throw new Error('Conta não encontrada');
+  return { acc, token: decrypt(acc.token_encrypted) };
+}
+
+// ── POST /api/meta/:accountId/campaigns/:campId/status
+router.post('/:accountId/campaigns/:campId/status', authMiddleware, async (req, res) => {
+  try {
+    const { token } = getAccountToken(req.params.accountId, req.user.id);
+    const { status } = req.body;
+    if (!['ACTIVE','PAUSED'].includes(status)) return res.status(400).json({ error: 'Status inválido.' });
+    const data = await metaPost(token, req.params.campId, { status });
+    res.json({ success: true, data });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── POST /api/meta/:accountId/adsets/:adsetId/status
+router.post('/:accountId/adsets/:adsetId/status', authMiddleware, async (req, res) => {
+  try {
+    const { token } = getAccountToken(req.params.accountId, req.user.id);
+    const { status } = req.body;
+    if (!['ACTIVE','PAUSED'].includes(status)) return res.status(400).json({ error: 'Status inválido.' });
+    const data = await metaPost(token, req.params.adsetId, { status });
+    res.json({ success: true, data });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── POST /api/meta/:accountId/adsets/:adsetId/budget
+router.post('/:accountId/adsets/:adsetId/budget', authMiddleware, async (req, res) => {
+  try {
+    const { token } = getAccountToken(req.params.accountId, req.user.id);
+    const { daily_budget } = req.body;
+    if (!daily_budget) return res.status(400).json({ error: 'Informe daily_budget.' });
+    const data = await metaPost(token, req.params.adsetId, { daily_budget: Math.round(parseFloat(daily_budget) * 100) });
+    res.json({ success: true, data });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+// ── POST /api/meta/:accountId/campaigns/:campId/budget
+router.post('/:accountId/campaigns/:campId/budget', authMiddleware, async (req, res) => {
+  try {
+    const { token } = getAccountToken(req.params.accountId, req.user.id);
+    const { daily_budget } = req.body;
+    if (!daily_budget) return res.status(400).json({ error: 'Informe daily_budget.' });
+    const data = await metaPost(token, req.params.campId, { daily_budget: Math.round(parseFloat(daily_budget) * 100) });
+    res.json({ success: true, data });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
 module.exports = router;
