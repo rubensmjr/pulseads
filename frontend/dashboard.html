@@ -1842,7 +1842,9 @@ setTimeout(initAIKeyState, 500);
 
   <!-- Quick prompts -->
   <div class="ai-quick-prompts" id="aiQuickPrompts">
-    ${AI_QUICK_PROMPTS.slice(0,3).map(p => `<button class="ai-quick-btn" onclick="sendQuickPrompt('${p.replace(/'/g,"\\'")}');document.getElementById('aiQuickPrompts').style.display='none'">${p}</button>`).join('')}
+    <button class="ai-quick-btn" onclick="sendQuickPrompt('📊 Analisa minhas campanhas agora');document.getElementById('aiQuickPrompts').style.display='none'">📊 Analisa minhas campanhas agora</button>
+    <button class="ai-quick-btn" onclick="sendQuickPrompt('💡 O que posso melhorar?');document.getElementById('aiQuickPrompts').style.display='none'">💡 O que posso melhorar?</button>
+    <button class="ai-quick-btn" onclick="sendQuickPrompt('🔥 Como reduzir meu CPM?');document.getElementById('aiQuickPrompts').style.display='none'">🔥 Como reduzir meu CPM?</button>
   </div>
 
   <div class="ai-chat-input-row">
@@ -1879,7 +1881,12 @@ setTimeout(initAIKeyState, 500);
     <!-- Sidebar with quick prompts + stats -->
     <div class="ai-page-sidebar">
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:10px">Atalhos</div>
-      ${AI_QUICK_PROMPTS.map(p => `<button class="ai-quick-full-btn" onclick="sendQuickPrompt('${p.replace(/'/g,"\\'")}');document.getElementById('aiPageMessages').scrollTop=9999">${p}</button>`).join('')}
+      <button class="ai-quick-full-btn" onclick="sendQuickPrompt('📊 Analisa minhas campanhas agora')">📊 Analisa minhas campanhas agora</button>
+      <button class="ai-quick-full-btn" onclick="sendQuickPrompt('💡 O que posso melhorar?')">💡 O que posso melhorar?</button>
+      <button class="ai-quick-full-btn" onclick="sendQuickPrompt('🔥 Como reduzir meu CPM?')">🔥 Como reduzir meu CPM?</button>
+      <button class="ai-quick-full-btn" onclick="sendQuickPrompt('🎯 Meu CTR está bom?')">🎯 Meu CTR está bom?</button>
+      <button class="ai-quick-full-btn" onclick="sendQuickPrompt('💰 Como escalar meu orçamento?')">💰 Como escalar meu orçamento?</button>
+      <button class="ai-quick-full-btn" onclick="sendQuickPrompt('⚠️ Explica os alertas ativos')">⚠️ Explica os alertas ativos</button>
 
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-top:20px;margin-bottom:10px">Contexto ativo</div>
       <div id="aiContextSummary" style="font-size:11px;color:var(--text2);line-height:1.7;background:var(--surface2);border-radius:8px;padding:10px;border:1px solid var(--border)">
