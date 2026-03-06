@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse Ads — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;600;700;800&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<script>
+  const u = JSON.parse(localStorage.getItem('pa_user')||'{}');
+  if(!localStorage.getItem('pa_token')||u.role!=='admin') window.location.href='/';
+</script>
+<style>
+:root{--bg:#0e0f14;--surface:#16171f;--surface2:#1e2029;--surface3:#252733;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#f0f0f5;--text2:#9a9ab0;--text3:#5a5a78;--blue:#4f8ef7;--blue2:#2563eb;--blue-glow:rgba(79,142,247,0.15);--green:#34d399;--green-glow:rgba(52,211,153,0.12);--red:#f87171;--red-glow:rgba(248,113,113,0.12);--amber:#fbbf24;--amber-glow:rgba(251,191,36,0.12);--font:'Cabinet Grotesk',sans-serif;--font-display:'Fraunces',Georgia,serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar-logo{font-family:var(--font-display);font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer;transition:all 0.15s}
+.btn:hover{border-color:var(--border2);color:var(--text)}
+.btn-primary{background:linear-gradient(135deg,var(--blue2),var(--blue));border-color:transparent;color:#fff;font-weight:600}
+.btn-primary:hover{opacity:0.9;color:#fff}
+.btn-danger{border-color:rgba(248,113,113,0.3);color:var(--red)}
+.btn-danger:hover{background:var(--red-glow)}
+.content{padding:28px;max-width:1200px;margin:0 auto}
+.page-title{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--text);letter-spacing:-0.5px;margin-bottom:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:8px}
+.stat-value{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--text);letter-spacing:-0.8px}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.section-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.section-title{font-size:13px;font-weight:700;color:var(--text)}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 16px;background:var(--surface2);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);text-align:left;border-bottom:1px solid var(--border)}
+tbody td{padding:12px 16px;font-size:12px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.03)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,0.02)}
+.td-name{font-weight:600;color:var(--text)}
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600}
+.pill.basic{background:var(--surface2);color:var(--text3)}
+.pill.pro{background:var(--blue-glow);color:var(--blue)}
+.pill.agency{background:var(--amber-glow);color:var(--amber)}
+.pill.admin{background:rgba(167,139,250,0.15);color:#a78bfa}
+.pill.active{background:var(--green-glow);color:var(--green)}
+.pill.inactive{background:var(--red-glow);color:var(--red)}
+.actions{display:flex;gap:6px}
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:800;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,0.5)}
+.modal-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:6px}
+.form-input,.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color 0.15s}
+.form-input:focus,.form-select:focus{border-color:var(--blue)}
+.form-select option{background:var(--surface2)}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-actions .btn{flex:1;padding:11px;text-align:center;justify-content:center}
+.error-box{background:var(--red-glow);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:10px;font-size:11px;color:var(--red);margin-top:10px;display:none}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">⚡ Pulse Ads <span style="font-size:11px;color:var(--amber);background:var(--amber-glow);padding:2px 8px;border-radius:100px;font-family:var(--font);font-weight:600;margin-left:4px">ADMIN</span></div>
+  <div class="topbar-right">
+    <a href="/dashboard.html"><button class="btn">← Dashboard</button></a>
+    <button class="btn" onclick="logout()">Sair</button>
+  </div>
+</div>
+
+<div class="content">
+  <div class="page-title">Painel Administrativo</div>
+
+  <!-- Stats -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="stat-label">Total usuários</div><div class="stat-value" id="statUsers">—</div></div>
+    <div class="stat-card"><div class="stat-label">Contas Meta</div><div class="stat-value" id="statAccounts">—</div></div>
+    <div class="stat-card"><div class="stat-label">Plano Basic</div><div class="stat-value" id="statBasic">—</div></div>
+    <div class="stat-card"><div class="stat-label">Plano Pro</div><div class="stat-value" id="statPro">—</div></div>
+    <div class="stat-card"><div class="stat-label">Plano Agency</div><div class="stat-value" id="statAgency">—</div></div>
+  </div>
+
+  <!-- Users -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Usuários</div>
+      <button class="btn btn-primary" onclick="openCreateUser()">+ Novo usuário</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Função</th><th>Status</th><th>Contas</th><th>Último login</th><th>Ações</th></tr></thead>
+        <tbody id="usersTable"><tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Plans -->
+  <div class="section">
+    <div class="section-header"><div class="section-title">Planos e preços</div></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Plano</th><th>Contas máx.</th><th>Preço/mês</th><th>Ações</th></tr></thead>
+        <tbody id="plansTable"><tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text3)">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Create/Edit User Modal -->
+<div class="overlay" id="userModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title" id="userModalTitle">Novo usuário</div>
+    <input type="hidden" id="editUserId" />
+    <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="uName" placeholder="João Silva" /></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="uEmail" type="email" placeholder="joao@email.com" /></div>
+    <div class="form-group" id="uPasswordGroup"><label class="form-label">Senha</label><input class="form-input" id="uPassword" type="password" placeholder="Mínimo 6 caracteres" /></div>
+    <div class="form-group">
+      <label class="form-label">Plano</label>
+      <select class="form-select" id="uPlan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="agency">Agency</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Função</label>
+      <select class="form-select" id="uRole"><option value="user">Usuário</option><option value="admin">Admin</option></select>
+    </div>
+    <div class="error-box" id="userModalErr"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('userModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveUser" onclick="saveUser()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Plan Modal -->
+<div class="overlay" id="planModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">Editar plano</div>
+    <input type="hidden" id="editPlanId" />
+    <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="pName" /></div>
+    <div class="form-group"><label class="form-label">Máx. contas (-1 = ilimitado)</label><input class="form-input" id="pMaxAccounts" type="number" /></div>
+    <div class="form-group"><label class="form-label">Preço mensal (R$)</label><input class="form-input" id="pPrice" type="number" step="0.01" /></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('planModal').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePlan()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function getToken(){ return localStorage.getItem('pa_token')||''; }
+function authHeaders(){ return {'Content-Type':'application/json','Authorization':'Bearer '+getToken()}; }
+function logout(){ localStorage.clear(); window.location.href='/'; }
+
+async function api(path, opts={}) {
+  const r = await fetch('/api'+path, { headers: authHeaders(), ...opts });
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.error||'Erro');
+  return data;
+}
+
+async function loadStats() {
+  const data = await api('/admin/stats');
+  document.getElementById('statUsers').textContent = data.totalUsers;
+  document.getElementById('statAccounts').textContent = data.totalAccounts;
+  const byPlan = Object.fromEntries(data.byPlan.map(p=>[p.plan,p.c]));
+  document.getElementById('statBasic').textContent = byPlan.basic||0;
+  document.getElementById('statPro').textContent = byPlan.pro||0;
+  document.getElementById('statAgency').textContent = byPlan.agency||0;
+}
+
+async function loadUsers() {
+  const users = await api('/admin/users');
+  document.getElementById('usersTable').innerHTML = users.map(u => `
+    <tr>
+      <td class="td-name">${esc(u.name)}</td>
+      <td>${esc(u.email)}</td>
+      <td><span class="pill ${u.plan}">${u.plan}</span></td>
+      <td><span class="pill ${u.role}">${u.role}</span></td>
+      <td><span class="pill ${u.active?'active':'inactive'}">${u.active?'Ativo':'Inativo'}</span></td>
+      <td>${u.account_count}</td>
+      <td>${u.last_login?new Date(u.last_login).toLocaleDateString('pt-BR'):'—'}</td>
+      <td><div class="actions">
+        <button class="btn" onclick="openEditUser(${JSON.stringify(u).replace(/"/g,'&quot;')})">Editar</button>
+        <button class="btn btn-danger" onclick="toggleUser(${u.id},${u.active})">${u.active?'Desativar':'Ativar'}</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+async function loadPlans() {
+  const plans = await api('/admin/plans');
+  document.getElementById('plansTable').innerHTML = plans.map(p => `
+    <tr>
+      <td class="td-name">${esc(p.name)}</td>
+      <td>${p.max_accounts===-1?'Ilimitado':p.max_accounts}</td>
+      <td>R$ ${parseFloat(p.price_monthly).toFixed(2)}</td>
+      <td><button class="btn" onclick="openEditPlan(${JSON.stringify(p).replace(/"/g,'&quot;')})">Editar</button></td>
+    </tr>`).join('');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+function openCreateUser() {
+  document.getElementById('userModalTitle').textContent = 'Novo usuário';
+  document.getElementById('editUserId').value = '';
+  ['uName','uEmail','uPassword'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('uPasswordGroup').style.display='';
+  document.getElementById('uPlan').value='basic';
+  document.getElementById('uRole').value='user';
+  document.getElementById('userModalErr').style.display='none';
+  document.getElementById('userModal').classList.add('open');
+}
+
+function openEditUser(u) {
+  document.getElementById('userModalTitle').textContent = 'Editar usuário';
+  document.getElementById('editUserId').value = u.id;
+  document.getElementById('uName').value = u.name;
+  document.getElementById('uEmail').value = u.email;
+  document.getElementById('uPasswordGroup').style.display='none';
+  document.getElementById('uPlan').value = u.plan;
+  document.getElementById('uRole').value = u.role;
+  document.getElementById('userModalErr').style.display='none';
+  document.getElementById('userModal').classList.add('open');
+}
+
+async function saveUser() {
+  const id = document.getElementById('editUserId').value;
+  const body = { name:document.getElementById('uName').value.trim(), email:document.getElementById('uEmail').value.trim(), plan:document.getElementById('uPlan').value, role:document.getElementById('uRole').value };
+  if(!id) body.password = document.getElementById('uPassword').value;
+  const err = document.getElementById('userModalErr');
+  err.style.display='none';
+  try {
+    if(id) await api('/admin/users/'+id, {method:'PUT', body:JSON.stringify(body)});
+    else await api('/admin/users', {method:'POST', body:JSON.stringify(body)});
+    document.getElementById('userModal').classList.remove('open');
+    await loadUsers(); await loadStats();
+  } catch(e) { err.textContent=e.message; err.style.display='block'; }
+}
+
+async function toggleUser(id, active) {
+  if(!confirm(active?'Desativar este usuário?':'Ativar este usuário?')) return;
+  await api('/admin/users/'+id, {method:'PUT', body:JSON.stringify({active:active?0:1})});
+  await loadUsers(); await loadStats();
+}
+
+function openEditPlan(p) {
+  document.getElementById('editPlanId').value = p.id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pMaxAccounts').value = p.max_accounts;
+  document.getElementById('pPrice').value = p.price_monthly;
+  document.getElementById('planModal').classList.add('open');
+}
+
+async function savePlan() {
+  const id = document.getElementById('editPlanId').value;
+  const body = { name:document.getElementById('pName').value, max_accounts:parseInt(document.getElementById('pMaxAccounts').value), price_monthly:parseFloat(document.getElementById('pPrice').value) };
+  await api('/admin/plans/'+id, {method:'PUT', body:JSON.stringify(body)});
+  document.getElementById('planModal').classList.remove('open');
+  await loadPlans();
+}
+
+document.addEventListener('keydown', e=>{ if(e.key==='Enter') { if(document.getElementById('userModal').classList.contains('open')) saveUser(); } });
+
+// Init
+loadStats(); loadUsers(); loadPlans();
+</script>
+</body>
+</html>
