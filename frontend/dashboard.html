@@ -769,7 +769,7 @@ function closeModal() {
   document.getElementById('btnConnect').innerHTML='Conectar conta';
   document.getElementById('btnConnect').disabled=false;
 }
-function handleOverlayClick(e){ if(e.target===document.getElementById('modalOverlay'))closeModal(); }
+function handleOverlayClick(e){ /* travado — use o botão Cancelar para fechar */ }
 function pickColor(el){ document.querySelectorAll('.cswatch').forEach(s=>s.classList.remove('sel')); el.classList.add('sel'); S.color=el.dataset.c; }
 
 function updateManagerDL() {
