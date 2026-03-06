@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pulse Ads — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -32,8 +32,8 @@
   --sidebar-w: 260px;
   --topbar-h: 60px;
   --radius: 12px;
-  --font: 'Cabinet Grotesk', sans-serif;
-  --font-display: 'Fraunces', Georgia, serif;
+  --font: 'DM Sans', sans-serif;
+  --font-display: 'Syne', sans-serif;
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
   --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
 }
@@ -353,6 +353,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .pill.inactive::before{background:var(--text3)}
 .obj-tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:var(--blue-glow);color:var(--blue);letter-spacing:0.3px}
 .num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
+.btn-tbl{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--font);font-size:11px;cursor:pointer;transition:all var(--transition);white-space:nowrap}
+.btn-tbl:hover{border-color:var(--border2);color:var(--text)}
+.btn-tbl-pause{border-color:rgba(251,191,36,0.3);color:var(--amber)}
+.btn-tbl-pause:hover{background:var(--amber-glow)}
+.btn-tbl-play{border-color:rgba(52,211,153,0.3);color:var(--green)}
+.btn-tbl-play:hover{background:var(--green-glow)}
+.btn-tbl:disabled{opacity:0.4;pointer-events:none}
 .table-footer-row{padding:10px 18px;background:var(--surface2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text3)}
 
 /* EMPTY STATE */
@@ -555,6 +562,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="empty-title">Bem-vindo ao Pulse Ads</div>
       <div class="empty-sub">Conecte sua primeira conta Meta Ads para começar a visualizar dados em tempo real.</div>
       <button class="btn-primary" onclick="openModal()">+ Adicionar conta Meta Ads</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- BUDGET MODAL -->
+<div class="overlay" id="budgetOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">💸 Editar orçamento diário</div>
+    <div class="modal-sub" id="budgetModalSub">Conjunto de anúncios</div>
+    <input type="hidden" id="budgetAdsetId" />
+    <input type="hidden" id="budgetAccIdx" />
+    <input type="hidden" id="budgetCurrency" />
+    <div class="form-group">
+      <label class="form-label">Novo orçamento diário</label>
+      <input class="form-input" id="budgetValue" type="number" step="0.01" min="1" placeholder="Ex: 50.00" />
+    </div>
+    <div class="modal-error" id="budgetErr"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('budgetOverlay').classList.remove('open')">Cancelar</button>
+      <button class="btn-connect" id="btnSaveBudget" onclick="saveBudget()">Salvar orçamento</button>
     </div>
   </div>
 </div>
@@ -1029,6 +1057,8 @@ function renderSingleView(content, title, idx) {
   const conv=parseInt((i.actions||[]).find(a=>a.action_type==='purchase')?.value||0);
   const leads=parseInt((i.actions||[]).find(a=>a.action_type==='lead')?.value||0);
   const prevConv=parseInt((pi.actions||[]).find(a=>a.action_type==='purchase')?.value||0);
+  const convValue=parseFloat((i.actions||[]).find(a=>a.action_type==='offsite_conversion.fb_pixel_purchase')?.value||(i.cost_per_action_type||[]).find(a=>a.action_type==='purchase')?.value||0);
+  const prevConvValue=parseFloat((pi.actions||[]).find(a=>a.action_type==='offsite_conversion.fb_pixel_purchase')?.value||0);
 
   content.innerHTML=`<div class="fade-up">
     ${alertsBar([acc])}
@@ -1040,6 +1070,7 @@ function renderSingleView(content, title, idx) {
       ${kpi('📈','CPM',fCa(i.cpm,acc),'Custo por mil impr.','blue',delta(i.cpm,pi.cpm,true),fCa(pi.cpm,acc))}
       ${kpi('💲','CPC',fCa(i.cpc,acc),'Custo por clique','amber',delta(i.cpc,pi.cpc,true),fCa(pi.cpc,acc))}
       ${kpi('🎯','Conversões',fN(conv),'Leads: '+fN(leads),'green',delta(conv,prevConv),'Prev: '+fN(prevConv))}
+      ${kpi('💵','Receita',fCa(convValue,acc),'Valor das conversões','green',delta(convValue,prevConvValue),fCa(prevConvValue,acc))}
     </div>
     <div class="charts-row">
       <div class="chart-card">
@@ -1060,8 +1091,8 @@ function renderSingleView(content, title, idx) {
         </div>
       </div>
     </div>
-    ${campaignsTable(acc.campaigns,'camp_'+idx,acc.currency)}
-    ${adsetsTable(acc.adsets,'adset_'+idx,acc.currency)}
+    ${campaignsTable(acc.campaigns,'camp_'+idx,acc.currency,idx)}
+    ${adsetsTable(acc.adsets,'adset_'+idx,acc.currency,idx)}
   </div>`;
 
   requestAnimationFrame(()=>{
@@ -1319,16 +1350,19 @@ function accOverCard(acc,idx) {
   </div>`;
 }
 
-function campaignsTable(camps, tableId, currency) {
+function campaignsTable(camps, tableId, currency, accIdx) {
   if(!camps||!camps.length) return `<div class="table-card" style="margin-bottom:16px"><div class="table-header"><div class="table-title">Campanhas</div></div><div class="loading-block">Sem campanhas no período.</div></div>`;
   const rows=camps.map(c=>{
     const i=c.insights?.data?.[0]||{};
     const conv=parseInt((i.actions||[]).find(a=>a.action_type==='purchase')?.value||0);
     const sc=c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'inactive';
     const sl=c.status==='ACTIVE'?'Ativa':c.status==='PAUSED'?'Pausada':c.status;
-    return `<tr>
+    const toggleSt=c.status==='ACTIVE'?'PAUSED':'ACTIVE';
+    const toggleLbl=c.status==='ACTIVE'?'⏸ Pausar':'▶ Ativar';
+    const toggleCls=c.status==='ACTIVE'?'btn-tbl-pause':'btn-tbl-play';
+    return `<tr id="camp-row-${c.id}">
       <td class="td-name" title="${esc(c.name)}">${esc(c.name)}</td>
-      <td><span class="pill ${sc}">${sl}</span></td>
+      <td><span class="pill ${sc}" id="camp-pill-${c.id}">${sl}</span></td>
       <td><span class="obj-tag">${(c.objective||'').replace(/_/g,' ')}</span></td>
       <td class="num">${fC(i.spend,currency)}</td>
       <td class="num">${fN(i.impressions)}</td>
@@ -1337,6 +1371,7 @@ function campaignsTable(camps, tableId, currency) {
       <td class="num">${fC(i.cpc,currency)}</td>
       <td class="num">${fC(i.cpm,currency)}</td>
       <td class="num">${fN(conv)}</td>
+      <td><button class="btn-tbl ${toggleCls}" onclick="toggleCampaign('${c.id}','${toggleSt}',this,${JSON.stringify(accIdx)})">${toggleLbl}</button></td>
     </tr>`;
   }).join('');
   return `<div class="table-card" style="margin-bottom:16px">
@@ -1349,7 +1384,7 @@ function campaignsTable(camps, tableId, currency) {
     </div>
     <div style="overflow-x:auto">
       <table class="tbl" id="tbl_${tableId}">
-        <thead><tr><th>Campanha</th><th>Status</th><th>Objetivo</th><th>Investimento</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>CPM</th><th>Conversões</th></tr></thead>
+        <thead><tr><th>Campanha</th><th>Status</th><th>Objetivo</th><th>Investimento</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>CPM</th><th>Conversões</th><th>Ação</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -1357,22 +1392,31 @@ function campaignsTable(camps, tableId, currency) {
   </div>`;
 }
 
-function adsetsTable(adsets, tableId, currency) {
+function adsetsTable(adsets, tableId, currency, accIdx) {
   if(!adsets||!adsets.length) return '';
   const rows=adsets.map(s=>{
     const i=s.insights?.data?.[0]||{};
     const sc=s.status==='ACTIVE'?'active':s.status==='PAUSED'?'paused':'inactive';
     const sl=s.status==='ACTIVE'?'Ativo':s.status==='PAUSED'?'Pausado':s.status;
     const bud=s.daily_budget?fC(s.daily_budget/100,currency)+'/dia':'—';
-    return `<tr>
+    const toggleStA=s.status==='ACTIVE'?'PAUSED':'ACTIVE';
+    const toggleLblA=s.status==='ACTIVE'?'⏸':'▶';
+    const budVal=s.daily_budget?parseFloat(s.daily_budget)/100:0;
+    return `<tr id="adset-row-${s.id}">
       <td class="td-name" title="${esc(s.name)}">${esc(s.name)}</td>
-      <td><span class="pill ${sc}">${sl}</span></td>
-      <td class="num">${bud}</td>
+      <td><span class="pill ${sc}" id="adset-pill-${s.id}">${sl}</span></td>
+      <td class="num">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="adset-bud-${s.id}">${bud}</span>
+          ${budVal>0?`<button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)})" title="Editar orçamento">✏️</button>`:''}
+        </div>
+      </td>
       <td class="num">${fC(i.spend,currency)}</td>
       <td class="num">${fN(i.impressions)}</td>
       <td class="num">${fN(i.clicks)}</td>
       <td class="num">${fP(i.ctr)}</td>
       <td class="num">${fD(i.frequency)}</td>
+      <td><button class="btn-tbl ${s.status==='ACTIVE'?'btn-tbl-pause':'btn-tbl-play'}" onclick="toggleAdset('${s.id}','${toggleStA}',this,${JSON.stringify(accIdx)})">${toggleLblA}</button></td>
     </tr>`;
   }).join('');
   return `<div class="table-card">
@@ -1385,7 +1429,7 @@ function adsetsTable(adsets, tableId, currency) {
     </div>
     <div style="overflow-x:auto">
       <table class="tbl" id="tbl_${tableId}">
-        <thead><tr><th>Conjunto</th><th>Status</th><th>Orçamento</th><th>Investimento</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>Frequência</th></tr></thead>
+        <thead><tr><th>Conjunto</th><th>Status</th><th>Orçamento/dia</th><th>Investimento</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>Frequência</th><th>Ação</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
