@@ -577,6 +577,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <input type="hidden" id="budgetAdsetId" />
     <input type="hidden" id="budgetAccIdx" />
     <input type="hidden" id="budgetCurrency" />
+    <input type="hidden" id="budgetType" />
     <div class="form-group">
       <label class="form-label">Novo orçamento diário</label>
       <input class="form-input" id="budgetValue" type="number" step="0.01" min="1" placeholder="Ex: 50.00" />
@@ -1354,7 +1355,10 @@ function campaignsTable(camps, tableId, currency, accIdx) {
       <td class="num">${fC(i.cpc,currency)}</td>
       <td class="num">${fC(i.cpm,currency)}</td>
       <td class="num">${fN(conv)}</td>
-      <td><button class="btn-tbl ${toggleCls}" onclick="toggleCampaign('${c.id}','${toggleSt}',this,${JSON.stringify(accIdx)})">${toggleLbl}</button></td>
+      <td style="display:flex;gap:4px;align-items:center">
+        <button class="btn-tbl" onclick="openBudgetModal('${c.id}',${c.daily_budget?parseFloat(c.daily_budget)/100:0},'${currency}',${JSON.stringify(accIdx)},'campaign')" title="Editar orçamento" style="font-size:12px">✏️</button>
+        <button class="btn-tbl ${toggleCls}" onclick="toggleCampaign('${c.id}','${toggleSt}',this,${JSON.stringify(accIdx)})">${toggleLbl}</button>
+      </td>
     </tr>`;
   }).join('');
   return `<div class="table-card" style="margin-bottom:16px">
@@ -1391,7 +1395,7 @@ function adsetsTable(adsets, tableId, currency, accIdx) {
       <td class="num">
         <div style="display:flex;align-items:center;gap:6px">
           <span id="adset-bud-${s.id}">${bud}</span>
-          ${budVal>0?`<button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)})" title="Editar orçamento">✏️</button>`:''}
+          <button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)},'adset')" title="Editar orçamento" style="font-size:12px">✏️</button>
         </div>
       </td>
       <td class="num">${fC(i.spend,currency)}</td>
