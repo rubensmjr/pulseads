@@ -1331,49 +1331,229 @@ function accOverCard(acc,idx) {
   </div>`;
 }
 
+// ════════════════════════════════════════════════════
+//  COLUMN CUSTOMIZER
+// ════════════════════════════════════════════════════
+
+const ALL_COLUMNS = {
+  // Performance
+  spend:      { label:'Investimento', group:'Performance', default:true,  fn:(i,cur)=>fC(i.spend,cur) },
+  impressions:{ label:'Impressões',   group:'Performance', default:true,  fn:(i)=>fN(i.impressions) },
+  clicks:     { label:'Cliques',      group:'Performance', default:true,  fn:(i)=>fN(i.clicks) },
+  ctr:        { label:'CTR',          group:'Performance', default:true,  fn:(i)=>fP(i.ctr) },
+  cpc:        { label:'CPC',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpc,cur) },
+  cpm:        { label:'CPM',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpm,cur) },
+  cpp:        { label:'CPP',          group:'Performance', default:false, fn:(i,cur)=>fC(i.cost_per_unique_click,cur) },
+  // Conversões
+  purchases:  { label:'Compras',      group:'Conversões',  default:true,  fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='purchase')?.value) },
+  purchase_val:{ label:'Valor Compras',group:'Conversões', default:false, fn:(i,cur)=>fC((i.action_values||[]).find(a=>a.action_type==='purchase')?.value,cur) },
+  leads:      { label:'Leads',        group:'Conversões',  default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='lead')?.value) },
+  cost_per_purchase:{ label:'CPR',    group:'Conversões',  default:false, fn:(i,cur)=>fC((i.cost_per_action_type||[]).find(a=>a.action_type==='purchase')?.value,cur) },
+  roas:       { label:'ROAS',         group:'Conversões',  default:false, fn:(i)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return s>0?fD(v/s)+'x':'—';} },
+  // Alcance
+  reach:      { label:'Alcance',      group:'Alcance',     default:false, fn:(i)=>fN(i.reach) },
+  frequency:  { label:'Frequência',   group:'Alcance',     default:false, fn:(i)=>fD(i.frequency) },
+  unique_clicks:{ label:'Cliques Únicos',group:'Alcance',  default:false, fn:(i)=>fN(i.unique_clicks) },
+  unique_ctr: { label:'CTR Único',    group:'Alcance',     default:false, fn:(i)=>fP(i.unique_ctr) },
+  // Engajamento
+  post_engagement:{ label:'Engajamento',group:'Engajamento',default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='post_engagement')?.value) },
+  post_reactions:{ label:'Reações',   group:'Engajamento', default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='post_reaction')?.value) },
+  comments:   { label:'Comentários',  group:'Engajamento', default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='comment')?.value) },
+  shares:     { label:'Compartilh.',  group:'Engajamento', default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='post')?.value) },
+  link_clicks:{ label:'Cliques no Link',group:'Engajamento',default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='link_click')?.value) },
+  // Vídeo
+  video_views:{ label:'Views Vídeo',  group:'Vídeo',       default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='video_view')?.value) },
+  video_p25:  { label:'Vídeo 25%',    group:'Vídeo',       default:false, fn:(i)=>fN(i.video_p25_watched_actions?.[0]?.value) },
+  video_p50:  { label:'Vídeo 50%',    group:'Vídeo',       default:false, fn:(i)=>fN(i.video_p50_watched_actions?.[0]?.value) },
+  video_p75:  { label:'Vídeo 75%',    group:'Vídeo',       default:false, fn:(i)=>fN(i.video_p75_watched_actions?.[0]?.value) },
+  video_p100: { label:'Vídeo 100%',   group:'Vídeo',       default:false, fn:(i)=>fN(i.video_p100_watched_actions?.[0]?.value) },
+  thruplay:   { label:'ThruPlay',     group:'Vídeo',       default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='video_continuous_2_sec_watched')?.value) },
+};
+
+const COL_STORAGE_KEY = 'hotfy_cols_v1';
+let _dragSrcCol = null;
+
+function loadColPreset() {
+  try {
+    const saved = localStorage.getItem(COL_STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e){}
+  return Object.keys(ALL_COLUMNS).filter(k => ALL_COLUMNS[k].default);
+}
+
+function saveColPreset(cols) {
+  localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(cols));
+}
+
+let ACTIVE_COLS = loadColPreset();
+
+function openColModal() {
+  const overlay = document.getElementById('colModalOverlay');
+  overlay.classList.add('open');
+  renderColModal();
+}
+function closeColModal() {
+  document.getElementById('colModalOverlay').classList.remove('open');
+}
+
+function renderColModal() {
+  const groups = {};
+  Object.entries(ALL_COLUMNS).forEach(([key, col]) => {
+    if (!groups[col.group]) groups[col.group] = [];
+    groups[col.group].push({ key, ...col });
+  });
+
+  // Active columns drag list
+  const activeHtml = ACTIVE_COLS.map(key => {
+    const col = ALL_COLUMNS[key];
+    if (!col) return '';
+    return `<div class="col-drag-item" draggable="true" data-key="${key}"
+      ondragstart="colDragStart(event)"
+      ondragover="colDragOver(event)"
+      ondrop="colDrop(event)"
+      ondragend="colDragEnd(event)">
+      <span class="col-drag-handle">⠿</span>
+      <span class="col-drag-label">${col.label}</span>
+      <span class="col-drag-group">${col.group}</span>
+      <button class="col-remove-btn" onclick="removeCol('${key}')">✕</button>
+    </div>`;
+  }).join('');
+
+  // Available columns by group
+  const availHtml = Object.entries(groups).map(([grp, cols]) => `
+    <div class="col-group-title">${grp}</div>
+    <div class="col-group-items">
+      ${cols.map(col => {
+        const active = ACTIVE_COLS.includes(col.key);
+        return `<div class="col-avail-item ${active?'active':''}" onclick="toggleCol('${col.key}')">
+          <span class="col-check">${active?'✓':''}</span>
+          <span>${col.label}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  document.getElementById('colActiveList').innerHTML = activeHtml || '<div style="color:var(--text3);font-size:12px;padding:12px">Nenhuma coluna ativa</div>';
+  document.getElementById('colAvailList').innerHTML = availHtml;
+}
+
+function toggleCol(key) {
+  if (ACTIVE_COLS.includes(key)) {
+    if (ACTIVE_COLS.length <= 1) return;
+    ACTIVE_COLS = ACTIVE_COLS.filter(k => k !== key);
+  } else {
+    ACTIVE_COLS.push(key);
+  }
+  saveColPreset(ACTIVE_COLS);
+  renderColModal();
+  refreshTables();
+}
+
+function removeCol(key) {
+  if (ACTIVE_COLS.length <= 1) return;
+  ACTIVE_COLS = ACTIVE_COLS.filter(k => k !== key);
+  saveColPreset(ACTIVE_COLS);
+  renderColModal();
+  refreshTables();
+}
+
+function resetCols() {
+  ACTIVE_COLS = Object.keys(ALL_COLUMNS).filter(k => ALL_COLUMNS[k].default);
+  saveColPreset(ACTIVE_COLS);
+  renderColModal();
+  refreshTables();
+}
+
+function refreshTables() {
+  // Re-render main view without full reload
+  const acc = S.accounts[typeof S.active === 'number' ? S.active : 0];
+  if (!acc) return;
+  const campEl = document.querySelector('[id^="tbl_camp_"]');
+  const adsetEl = document.querySelector('[id^="tbl_adset_"]');
+  if (campEl) {
+    const wrap = campEl.closest('.table-card');
+    if (wrap) wrap.outerHTML = campaignsTable(acc.campaigns, 'camp_0', acc.currency, typeof S.active === 'number' ? S.active : 0);
+  }
+  if (adsetEl) {
+    const wrap = adsetEl.closest('.table-card');
+    if (wrap) wrap.outerHTML = adsetsTable(acc.adsets, 'adset_0', acc.currency, typeof S.active === 'number' ? S.active : 0);
+  }
+  renderMain();
+}
+
+// Drag and drop
+function colDragStart(e) {
+  _dragSrcCol = e.currentTarget.dataset.key;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function colDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.col-drag-item').forEach(el => el.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+function colDrop(e) {
+  e.preventDefault();
+  const target = e.currentTarget.dataset.key;
+  if (_dragSrcCol && _dragSrcCol !== target) {
+    const srcIdx = ACTIVE_COLS.indexOf(_dragSrcCol);
+    const tgtIdx = ACTIVE_COLS.indexOf(target);
+    ACTIVE_COLS.splice(srcIdx, 1);
+    ACTIVE_COLS.splice(tgtIdx, 0, _dragSrcCol);
+    saveColPreset(ACTIVE_COLS);
+    renderColModal();
+  }
+}
+function colDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.col-drag-item').forEach(el => el.classList.remove('drag-over'));
+  _dragSrcCol = null;
+}
+
+// Render a cell value for a column key
+function renderColVal(key, i, currency) {
+  const col = ALL_COLUMNS[key];
+  if (!col) return '—';
+  try { return col.fn(i, currency) || '—'; } catch(e) { return '—'; }
+}
+
 function campaignsTable(camps, tableId, currency, accIdx) {
-  if(!camps||!camps.length) return `<div class="table-card" style="margin-bottom:16px"><div class="table-header"><div class="table-title">Campanhas</div></div><div class="loading-block">Sem campanhas no período.</div></div>`;
+  if(!camps||!camps.length) return `<div class="table-card" style="margin-bottom:16px"><div class="table-header"><div class="table-title">Campanhas</div><button class="btn-cols" onclick="openColModal()">⚙ Colunas</button></div><div class="loading-block">Sem campanhas no período.</div></div>`;
   const rows=camps.map(c=>{
     const i=c.insights?.data?.[0]||{};
-    const conv=parseInt((i.actions||[]).find(a=>a.action_type==='purchase')?.value||0);
     const sc=c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'inactive';
     const sl=c.status==='ACTIVE'?'Ativa':c.status==='PAUSED'?'Pausada':c.status;
     const toggleSt=c.status==='ACTIVE'?'PAUSED':'ACTIVE';
     const toggleLbl=c.status==='ACTIVE'?'⏸ Pausar':'▶ Ativar';
     const toggleCls=c.status==='ACTIVE'?'btn-tbl-pause':'btn-tbl-play';
+    const colCells = ACTIVE_COLS.map(key => {
+      if (key === 'spend') return `<td class="num"><div style="display:flex;align-items:center;gap:4px">${fC(i.spend,currency)}<button class="btn-tbl" onclick="openBudgetModal('${c.id}',${c.daily_budget?parseFloat(c.daily_budget)/100:0},'${currency}',${JSON.stringify(accIdx)},'campaign')" style="padding:2px 5px;font-size:11px">✏️</button></div></td>`;
+      return `<td class="num">${renderColVal(key, i, currency)}</td>`;
+    }).join('');
     return `<tr id="camp-row-${c.id}">
       <td class="td-name" title="${esc(c.name)}">${esc(c.name)}</td>
       <td><span class="pill ${sc}" id="camp-pill-${c.id}">${sl}</span></td>
       <td><span class="obj-tag">${(c.objective||'').replace(/_/g,' ')}</span></td>
-      <td class="num">
-        <div style="display:flex;align-items:center;gap:4px">
-          ${fC(i.spend,currency)}
-          <button class="btn-tbl" onclick="openBudgetModal('${c.id}',${c.daily_budget?parseFloat(c.daily_budget)/100:0},'${currency}',${JSON.stringify(accIdx)},'campaign')" title="Editar orcamento" style="padding:2px 6px;font-size:11px">✏️</button>
-        </div>
-      </td>
-      <td class="num">${fN(i.impressions)}</td>
-      <td class="num">${fN(i.clicks)}</td>
-      <td class="num">${fP(i.ctr)}</td>
-      <td class="num">${fC(i.cpc,currency)}</td>
-      <td class="num">${fC(i.cpm,currency)}</td>
-      <td class="num">${fN(conv)}</td>
-      <td style="display:flex;gap:4px;align-items:center">
-        <button class="btn-tbl" onclick="openBudgetModal('${c.id}',${c.daily_budget?parseFloat(c.daily_budget)/100:0},'${currency}',${JSON.stringify(accIdx)},'campaign')" title="Editar orçamento" style="font-size:12px">✏️</button>
+      ${colCells}
+      <td style="display:flex;gap:4px;align-items:center;white-space:nowrap">
         <button class="btn-tbl ${toggleCls}" onclick="toggleCampaign('${c.id}','${toggleSt}',this,${JSON.stringify(accIdx)})">${toggleLbl}</button>
       </td>
     </tr>`;
   }).join('');
+  const colHeaders = ACTIVE_COLS.map(key => `<th>${ALL_COLUMNS[key]?.label||key}</th>`).join('');
   return `<div class="table-card" style="margin-bottom:16px">
     <div class="table-header">
       <div class="table-title">Campanhas</div>
       <div class="table-controls">
         <input class="table-search" placeholder="Buscar..." oninput="filterTable(this,'tbl_${tableId}')" />
         <span class="table-count">${camps.length}</span>
+        <button class="btn-cols" onclick="openColModal()">⚙ Colunas</button>
       </div>
     </div>
     <div style="overflow-x:auto">
       <table class="tbl" id="tbl_${tableId}">
-        <thead><tr><th>Campanha</th><th>Status</th><th>Objetivo</th><th>Investimento</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>CPM</th><th>Conversões</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Campanha</th><th>Status</th><th>Objetivo</th>${colHeaders}<th>Ação</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -1391,34 +1571,31 @@ function adsetsTable(adsets, tableId, currency, accIdx) {
     const toggleStA=s.status==='ACTIVE'?'PAUSED':'ACTIVE';
     const toggleLblA=s.status==='ACTIVE'?'⏸':'▶';
     const budVal=s.daily_budget?parseFloat(s.daily_budget)/100:0;
+    const colCells = ACTIVE_COLS.map(key => {
+      if (key === 'spend') return `<td class="num"><div style="display:flex;align-items:center;gap:4px">${fC(i.spend,currency)}<button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)},'adset')" style="padding:2px 5px;font-size:11px">✏️</button></div></td>`;
+      return `<td class="num">${renderColVal(key, i, currency)}</td>`;
+    }).join('');
     return `<tr id="adset-row-${s.id}">
       <td class="td-name" title="${esc(s.name)}">${esc(s.name)}</td>
       <td><span class="pill ${sc}" id="adset-pill-${s.id}">${sl}</span></td>
       <td class="num"><span id="adset-bud-${s.id}">${bud}</span></td>
-      <td class="num">
-        <div style="display:flex;align-items:center;gap:4px">
-          ${fC(i.spend,currency)}
-          <button class="btn-tbl" onclick="openBudgetModal('${s.id}',${budVal},'${currency}',${JSON.stringify(accIdx)},'adset')" title="Editar orcamento" style="padding:2px 6px;font-size:11px">✏️</button>
-        </div>
-      </td>
-      <td class="num">${fN(i.impressions)}</td>
-      <td class="num">${fN(i.clicks)}</td>
-      <td class="num">${fP(i.ctr)}</td>
-      <td class="num">${fD(i.frequency)}</td>
+      ${colCells}
       <td><button class="btn-tbl ${s.status==='ACTIVE'?'btn-tbl-pause':'btn-tbl-play'}" onclick="toggleAdset('${s.id}','${toggleStA}',this,${JSON.stringify(accIdx)})">${toggleLblA}</button></td>
     </tr>`;
   }).join('');
+  const colHeaders = ACTIVE_COLS.map(key => `<th>${ALL_COLUMNS[key]?.label||key}</th>`).join('');
   return `<div class="table-card">
     <div class="table-header">
       <div class="table-title">Conjuntos de Anúncios</div>
       <div class="table-controls">
         <input class="table-search" placeholder="Buscar..." oninput="filterTable(this,'tbl_${tableId}')" />
         <span class="table-count">${adsets.length}</span>
+        <button class="btn-cols" onclick="openColModal()">⚙ Colunas</button>
       </div>
     </div>
     <div style="overflow-x:auto">
       <table class="tbl" id="tbl_${tableId}">
-        <thead><tr><th>Conjunto</th><th>Status</th><th>Orçamento/dia</th><th>Investimento</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>Frequência</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Conjunto</th><th>Status</th><th>Orç/dia</th>${colHeaders}<th>Ação</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -1801,6 +1978,79 @@ function initAIKeyState() {
 }
 setTimeout(initAIKeyState, 500);
 </script>
+
+<!-- ══ COLUMN CUSTOMIZER MODAL ══════════════════════ -->
+<div class="overlay" id="colModalOverlay" onclick="if(event.target===this)closeColModal()">
+  <div class="modal" style="max-width:680px;max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="font-family:var(--font-display);font-size:17px;font-weight:800;margin-bottom:2px">⚙ Personalizar Colunas</div>
+      <div style="font-size:12px;color:var(--text3)">Arraste para reordenar • Clique para ativar/desativar</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;min-height:0">
+      <!-- Active columns (drag list) -->
+      <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:12px 16px 8px;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);flex-shrink:0">
+          Colunas ativas <span id="colActiveCount" style="color:var(--blue)"></span>
+        </div>
+        <div id="colActiveList" style="flex:1;overflow-y:auto;padding:0 12px 12px"></div>
+      </div>
+      <!-- Available columns -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:12px 16px 8px;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);flex-shrink:0">Disponíveis</div>
+        <div id="colAvailList" style="flex:1;overflow-y:auto;padding:0 12px 12px"></div>
+      </div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <button onclick="resetCols()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer">↺ Padrão</button>
+      <button onclick="closeColModal()" style="padding:7px 20px;border-radius:8px;border:none;background:var(--blue2);color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ══ COLUMN CUSTOMIZER ══ */
+.btn-cols{
+  padding:5px 10px;border-radius:7px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:11px;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;
+}
+.btn-cols:hover{border-color:var(--blue);color:var(--blue)}
+
+.col-drag-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);margin-bottom:4px;cursor:grab;
+  transition:all 0.15s;user-select:none;
+}
+.col-drag-item:hover{border-color:var(--border2)}
+.col-drag-item.dragging{opacity:0.4;cursor:grabbing}
+.col-drag-item.drag-over{border-color:var(--blue);background:var(--blue-glow)}
+.col-drag-handle{font-size:14px;color:var(--text3);cursor:grab;flex-shrink:0}
+.col-drag-label{flex:1;font-size:12px;font-weight:500;color:var(--text)}
+.col-drag-group{font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 6px;border-radius:4px}
+.col-remove-btn{
+  width:18px;height:18px;border-radius:4px;border:none;
+  background:transparent;color:var(--text3);cursor:pointer;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all 0.15s;
+}
+.col-remove-btn:hover{background:var(--red-glow);color:var(--red)}
+
+.col-group-title{
+  font-size:10px;text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--text3);padding:8px 4px 4px;font-weight:700;
+}
+.col-group-items{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.col-avail-item{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 9px;border-radius:7px;border:1px solid var(--border);
+  background:var(--surface2);font-size:11px;color:var(--text2);
+  cursor:pointer;transition:all 0.15s;
+}
+.col-avail-item:hover{border-color:var(--border2);color:var(--text)}
+.col-avail-item.active{border-color:rgba(79,142,247,0.4);background:var(--blue-glow);color:var(--blue)}
+.col-check{font-size:10px;font-weight:700;width:12px;text-align:center}
+</style>
 
 <!-- ══ AI CHAT FLOATING BUTTON ══════════════════════ -->
 <button class="ai-fab" onclick="openAIChat()" title="Hotfy AI Coach">
