@@ -1574,6 +1574,494 @@ async function saveBudget() {
   btn.textContent = 'Salvar orcamento';
   btn.disabled = false;
 }
+
+// ════════════════════════════════════════════════════
+//  AI COACH — HOTFY
+// ════════════════════════════════════════════════════
+
+const AI_KEY_STORAGE = 'hotfy_ai_key';
+let aiMessages = []; // conversation history
+
+function getAIKey(){ return localStorage.getItem(AI_KEY_STORAGE)||''; }
+function setAIKey(k){ localStorage.setItem(AI_KEY_STORAGE, k.trim()); }
+
+// Build context from current account data
+function buildAIContext() {
+  const accs = S.accounts.filter(a => a.status === 'ok' && a.insights);
+  if (!accs.length) return 'Nenhuma conta conectada ainda.';
+  const lines = [];
+  accs.forEach(acc => {
+    const i = acc.insights || {};
+    const camps = acc.campaigns || [];
+    const adsets = acc.adsets || [];
+    const active = camps.filter(c => c.status === 'ACTIVE').length;
+    const paused = camps.filter(c => c.status === 'PAUSED').length;
+    const conv = (i.actions||[]).find(a=>a.action_type==='purchase')?.value || 0;
+    const leads = (i.actions||[]).find(a=>a.action_type==='lead')?.value || 0;
+    lines.push(`
+CONTA: ${acc.name} (${acc.currency})
+- Investimento: ${fC(i.spend, acc.currency)}
+- Impressões: ${fN(i.impressions)} | Alcance: ${fN(i.reach)}
+- Cliques: ${fN(i.clicks)} | CTR: ${fP(i.ctr)}
+- CPM: ${fC(i.cpm, acc.currency)} | CPC: ${fC(i.cpc, acc.currency)}
+- Conversões: ${conv} | Leads: ${leads}
+- Campanhas: ${camps.length} total (${active} ativas, ${paused} pausadas)
+- Conjuntos de anúncios: ${adsets.length}
+- Período: ${document.getElementById('topbarPeriod')?.textContent || 'Hoje'}
+    `.trim());
+  });
+  if (S.alerts.length) {
+    lines.push('\nALERTAS ATIVOS:\n' + S.alerts.map(a => `- [${a.acc}] ${a.msg}`).join('\n'));
+  }
+  return lines.join('\n\n');
+}
+
+const AI_SYSTEM = `Você é o Hotfy AI Coach, um especialista em tráfego pago com foco em Meta Ads (Facebook e Instagram).
+Você analisa dados reais de campanhas do usuário e dá dicas práticas, diretas e acionáveis.
+
+Seu estilo:
+- Respostas objetivas e práticas, sem enrolação
+- Use emojis com moderação para destacar pontos importantes
+- Quando identificar problemas, sugira soluções concretas
+- Fale como um gestor de tráfego experiente, não como um robô
+- Português brasileiro
+
+Áreas de especialidade:
+- Otimização de CPM, CPC, CTR, ROAS
+- Estrutura de campanhas e conjuntos
+- Criativos e públicos
+- Orçamento e lances
+- Análise de métricas e KPIs
+- Estratégias de escala
+- Diagnóstico de campanhas com baixa performance`;
+
+async function sendAIMessage(userMsg) {
+  const key = getAIKey();
+  if (!key) {
+    appendAIMessage('assistant', '⚠️ Configure sua chave API da Anthropic nas configurações do AI Coach para começar!');
+    return;
+  }
+
+  const context = buildAIContext();
+  const systemWithContext = AI_SYSTEM + `\n\nDADOS ATUAIS DAS CAMPANHAS DO USUÁRIO:\n${context}`;
+
+  aiMessages.push({ role: 'user', content: userMsg });
+  appendAIMessage('user', userMsg);
+  setAILoading(true);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 1024,
+        system: systemWithContext,
+        messages: aiMessages.slice(-10) // keep last 10 messages for context
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'Erro na API');
+
+    const reply = data.content[0].text;
+    aiMessages.push({ role: 'assistant', content: reply });
+    appendAIMessage('assistant', reply);
+  } catch(e) {
+    appendAIMessage('assistant', `❌ Erro: ${e.message}. Verifique sua API key.`);
+    aiMessages.pop();
+  }
+  setAILoading(false);
+}
+
+function appendAIMessage(role, text) {
+  // Update both chat windows (floating + page)
+  ['aiChatMessages', 'aiPageMessages'].forEach(containerId => {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const div = document.createElement('div');
+    div.className = `ai-msg ai-msg-${role}`;
+    // Convert markdown-like formatting
+    const formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+    div.innerHTML = role === 'assistant'
+      ? `<div class="ai-avatar">🤖</div><div class="ai-bubble">${formatted}</div>`
+      : `<div class="ai-bubble ai-bubble-user">${formatted}</div>`;
+    el.appendChild(div);
+    el.scrollTop = el.scrollHeight;
+  });
+}
+
+function setAILoading(on) {
+  ['aiChatSend', 'aiPageSend'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) { btn.disabled = on; btn.textContent = on ? '...' : 'Enviar'; }
+  });
+  if (on) {
+    ['aiChatMessages', 'aiPageMessages'].forEach(containerId => {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      const div = document.createElement('div');
+      div.className = 'ai-msg ai-msg-assistant ai-loading-msg';
+      div.innerHTML = '<div class="ai-avatar">🤖</div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
+    });
+  } else {
+    document.querySelectorAll('.ai-loading-msg').forEach(el => el.remove());
+  }
+}
+
+function handleAISend(inputId) {
+  const inp = document.getElementById(inputId);
+  const msg = inp?.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  sendAIMessage(msg);
+}
+
+function handleAIKeydown(e, inputId) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(inputId); }
+}
+
+// Quick prompts
+const AI_QUICK_PROMPTS = [
+  '📊 Analisa minhas campanhas agora',
+  '💡 O que posso melhorar?',
+  '🔥 Como reduzir meu CPM?',
+  '🎯 Meu CTR está bom?',
+  '💰 Como escalar meu orçamento?',
+  '⚠️ Explica os alertas ativos',
+];
+
+function sendQuickPrompt(text) {
+  sendAIMessage(text);
+}
+
+function openAIChat() {
+  document.getElementById('aiChatPanel').classList.add('open');
+  document.getElementById('aiChatInput').focus();
+  // Welcome message on first open
+  const msgs = document.getElementById('aiChatMessages');
+  if (msgs && msgs.children.length === 0) {
+    appendAIMessage('assistant', '👋 Olá! Sou o **Hotfy AI Coach**, seu especialista em tráfego pago.\n\nPosso analisar suas campanhas em tempo real e te dar dicas práticas. O que quer saber?');
+  }
+}
+function closeAIChat() { document.getElementById('aiChatPanel').classList.remove('open'); }
+
+function openAIPage() {
+  document.getElementById('aiCoachPage').classList.add('open');
+  const msgs = document.getElementById('aiPageMessages');
+  if (msgs && msgs.children.length === 0) {
+    appendAIMessage('assistant', '👋 Bem-vindo ao **Hotfy AI Coach**!\n\nAqui você tem um espaço completo para conversar sobre suas campanhas. Posso:\n\n- 📊 **Analisar** seus dados em tempo real\n- 💡 **Sugerir** melhorias específicas\n- 🎯 **Diagnosticar** problemas de performance\n- 🚀 **Ensinar** estratégias de escala\n\nUse os atalhos abaixo ou pergunte qualquer coisa!');
+  }
+}
+function closeAIPage() { document.getElementById('aiCoachPage').classList.remove('open'); }
+
+function saveAIKey() {
+  const k = document.getElementById('aiKeyInput')?.value.trim();
+  const k2 = document.getElementById('aiKeyInput2')?.value.trim();
+  const key = k || k2;
+  if (!key || !key.startsWith('sk-ant-')) {
+    alert('Chave inválida. Deve começar com sk-ant-');
+    return;
+  }
+  setAIKey(key);
+  document.querySelectorAll('.ai-key-setup').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.ai-key-ok').forEach(el => el.style.display = 'flex');
+  alert('✅ Chave salva com sucesso!');
+}
+
+function removeAIKey() {
+  if (!confirm('Remover chave API?')) return;
+  localStorage.removeItem(AI_KEY_STORAGE);
+  document.querySelectorAll('.ai-key-setup').forEach(el => el.style.display = 'flex');
+  document.querySelectorAll('.ai-key-ok').forEach(el => el.style.display = 'none');
+}
+
+// Init AI key state on load
+function initAIKeyState() {
+  const hasKey = !!getAIKey();
+  document.querySelectorAll('.ai-key-setup').forEach(el => el.style.display = hasKey ? 'none' : 'flex');
+  document.querySelectorAll('.ai-key-ok').forEach(el => el.style.display = hasKey ? 'flex' : 'none');
+  if (hasKey) {
+    document.querySelectorAll('.ai-key-display').forEach(el => {
+      const k = getAIKey();
+      el.textContent = k.slice(0,12) + '••••••••••••' + k.slice(-4);
+    });
+  }
+}
+setTimeout(initAIKeyState, 500);
 </script>
+
+<!-- ══ AI CHAT FLOATING BUTTON ══════════════════════ -->
+<button class="ai-fab" onclick="openAIChat()" title="Hotfy AI Coach">
+  <span class="ai-fab-icon">🤖</span>
+  <span class="ai-fab-label">AI Coach</span>
+</button>
+
+<!-- ══ AI CHAT FLOATING PANEL ═══════════════════════ -->
+<div class="ai-chat-panel" id="aiChatPanel">
+  <div class="ai-chat-header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="ai-chat-avatar">🤖</div>
+      <div>
+        <div style="font-weight:700;font-size:13px">Hotfy AI Coach</div>
+        <div style="font-size:10px;color:var(--green)">● Online</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="ai-header-btn" onclick="openAIPage()" title="Abrir em tela cheia">⤢</button>
+      <button class="ai-header-btn" onclick="closeAIChat()" title="Fechar">✕</button>
+    </div>
+  </div>
+
+  <!-- Key setup -->
+  <div class="ai-key-setup" id="aiKeySetupChat" style="display:flex">
+    <div style="padding:14px;background:rgba(167,139,250,0.07);border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:6px">🔑 Configure sua API Key</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5">Obtenha em <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue)">console.anthropic.com</a></div>
+      <input id="aiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-size:11px;outline:none;margin-bottom:6px">
+      <button onclick="saveAIKey()" style="width:100%;padding:7px;border-radius:7px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Salvar chave</button>
+    </div>
+  </div>
+  <div class="ai-key-ok" style="display:none;padding:8px 12px;background:rgba(52,211,153,0.07);border-bottom:1px solid var(--border);align-items:center;justify-content:space-between">
+    <span style="font-size:11px;color:var(--green)">✅ API Key configurada</span>
+    <button onclick="removeAIKey()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer">Trocar</button>
+  </div>
+
+  <div class="ai-chat-messages" id="aiChatMessages"></div>
+
+  <!-- Quick prompts -->
+  <div class="ai-quick-prompts" id="aiQuickPrompts">
+    ${AI_QUICK_PROMPTS.slice(0,3).map(p => `<button class="ai-quick-btn" onclick="sendQuickPrompt('${p.replace(/'/g,"\\'")}');document.getElementById('aiQuickPrompts').style.display='none'">${p}</button>`).join('')}
+  </div>
+
+  <div class="ai-chat-input-row">
+    <textarea id="aiChatInput" class="ai-input" placeholder="Pergunte sobre suas campanhas..." rows="1" onkeydown="handleAIKeydown(event,'aiChatInput')"></textarea>
+    <button id="aiChatSend" class="ai-send-btn" onclick="handleAISend('aiChatInput')">➤</button>
+  </div>
+</div>
+
+<!-- ══ AI COACH FULL PAGE ════════════════════════════ -->
+<div class="ai-coach-page" id="aiCoachPage">
+  <div class="ai-page-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:28px">🤖</div>
+      <div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:800">Hotfy AI Coach</div>
+        <div style="font-size:12px;color:var(--text3)">Especialista em tráfego pago • Meta Ads</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <!-- Key config -->
+      <div class="ai-key-setup" style="display:flex;align-items:center;gap:6px">
+        <input id="aiKeyInput2" type="password" placeholder="sk-ant-api03-..." style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;outline:none;width:220px">
+        <button onclick="saveAIKey()" style="padding:7px 14px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Salvar chave</button>
+      </div>
+      <div class="ai-key-ok" style="display:none;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--green)">✅ <span class="ai-key-display"></span></span>
+        <button onclick="removeAIKey()" style="font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer">Trocar</button>
+      </div>
+      <button onclick="closeAIPage()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer">✕ Fechar</button>
+    </div>
+  </div>
+
+  <div class="ai-page-body">
+    <!-- Sidebar with quick prompts + stats -->
+    <div class="ai-page-sidebar">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:10px">Atalhos</div>
+      ${AI_QUICK_PROMPTS.map(p => `<button class="ai-quick-full-btn" onclick="sendQuickPrompt('${p.replace(/'/g,"\\'")}');document.getElementById('aiPageMessages').scrollTop=9999">${p}</button>`).join('')}
+
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-top:20px;margin-bottom:10px">Contexto ativo</div>
+      <div id="aiContextSummary" style="font-size:11px;color:var(--text2);line-height:1.7;background:var(--surface2);border-radius:8px;padding:10px;border:1px solid var(--border)">
+        Carregando dados...
+      </div>
+
+      <button onclick="aiMessages=[];document.getElementById('aiPageMessages').innerHTML='';document.getElementById('aiChatMessages').innerHTML='';openAIPage();" style="margin-top:12px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer">🗑 Limpar conversa</button>
+    </div>
+
+    <!-- Main chat -->
+    <div class="ai-page-chat">
+      <div class="ai-chat-messages ai-page-messages" id="aiPageMessages"></div>
+      <div class="ai-page-input-row">
+        <textarea id="aiPageInput" class="ai-input" placeholder="Pergunte sobre suas campanhas, peça análises, dicas de otimização..." rows="2" onkeydown="handleAIKeydown(event,'aiPageInput')"></textarea>
+        <button id="aiPageSend" class="ai-send-btn ai-send-lg" onclick="handleAISend('aiPageInput')">➤ Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ══ AI FAB ══ */
+.ai-fab{
+  position:fixed;bottom:24px;right:24px;z-index:400;
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#7c3aed,#a78bfa);
+  border:none;border-radius:100px;padding:12px 18px;
+  color:#fff;font-family:var(--font);font-size:13px;font-weight:700;
+  cursor:pointer;box-shadow:0 4px 24px rgba(167,139,250,0.5);
+  transition:all 0.2s;
+}
+.ai-fab:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(167,139,250,0.6)}
+.ai-fab-icon{font-size:16px}
+
+/* ══ AI CHAT PANEL ══ */
+.ai-chat-panel{
+  position:fixed;bottom:80px;right:24px;z-index:450;
+  width:360px;max-height:560px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:18px;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 16px 64px rgba(0,0,0,0.6);
+  transform:translateY(20px) scale(0.95);opacity:0;pointer-events:none;
+  transition:all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.ai-chat-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:all}
+
+.ai-chat-header{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(167,139,250,0.08));
+  flex-shrink:0;
+}
+.ai-chat-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,#7c3aed,#a78bfa);
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.ai-header-btn{
+  width:26px;height:26px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--text3);cursor:pointer;font-size:12px;
+  transition:all 0.15s;display:flex;align-items:center;justify-content:center;
+}
+.ai-header-btn:hover{border-color:var(--border2);color:var(--text)}
+
+.ai-chat-messages{
+  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;
+  min-height:200px;
+}
+.ai-page-messages{min-height:unset;flex:1}
+
+.ai-msg{display:flex;align-items:flex-start;gap:8px}
+.ai-msg-user{flex-direction:row-reverse}
+.ai-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ai-bubble{
+  background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  padding:10px 12px;font-size:12px;color:var(--text);line-height:1.6;
+  max-width:85%;
+}
+.ai-bubble code{background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:11px}
+.ai-bubble-user{
+  background:linear-gradient(135deg,rgba(124,58,237,0.25),rgba(167,139,250,0.15));
+  border-color:rgba(167,139,250,0.3);color:var(--text);
+}
+.ai-typing{display:flex;gap:4px;align-items:center;padding:2px 0}
+.ai-typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiTyping 1.2s infinite}
+.ai-typing span:nth-child(2){animation-delay:0.2s}
+.ai-typing span:nth-child(3){animation-delay:0.4s}
+@keyframes aiTyping{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-4px);opacity:1}}
+
+.ai-quick-prompts{
+  padding:8px 10px;display:flex;flex-direction:column;gap:4px;
+  border-top:1px solid var(--border);flex-shrink:0;
+}
+.ai-quick-btn{
+  padding:6px 10px;border-radius:7px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);font-family:var(--font);font-size:11px;
+  cursor:pointer;text-align:left;transition:all 0.15s;
+}
+.ai-quick-btn:hover{border-color:var(--purple);color:var(--purple)}
+
+.ai-chat-input-row{
+  display:flex;gap:6px;padding:10px;border-top:1px solid var(--border);flex-shrink:0;
+}
+.ai-input{
+  flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;
+  padding:8px 10px;color:var(--text);font-family:var(--font);font-size:12px;
+  outline:none;resize:none;line-height:1.4;transition:border-color 0.15s;
+}
+.ai-input:focus{border-color:var(--purple)}
+.ai-input::placeholder{color:var(--text3)}
+.ai-send-btn{
+  width:36px;height:36px;border-radius:9px;border:none;
+  background:linear-gradient(135deg,#7c3aed,#a78bfa);
+  color:#fff;font-size:14px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;align-self:flex-end;
+}
+.ai-send-btn:hover{opacity:0.9;transform:scale(1.05)}
+.ai-send-btn:disabled{opacity:0.4;pointer-events:none}
+
+/* ══ AI COACH FULL PAGE ══ */
+.ai-coach-page{
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg);display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.ai-coach-page.open{transform:translateY(0)}
+.ai-page-header{
+  padding:16px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);flex-shrink:0;
+}
+.ai-page-body{
+  flex:1;display:flex;overflow:hidden;
+}
+.ai-page-sidebar{
+  width:240px;border-right:1px solid var(--border);padding:16px;
+  overflow-y:auto;flex-shrink:0;background:var(--surface);
+}
+.ai-quick-full-btn{
+  width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--text2);font-family:var(--font);font-size:11px;
+  cursor:pointer;text-align:left;transition:all 0.15s;margin-bottom:4px;display:block;
+}
+.ai-quick-full-btn:hover{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,0.07)}
+.ai-page-chat{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+}
+.ai-page-messages{
+  flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;
+}
+.ai-page-messages .ai-bubble{font-size:13px;max-width:75%}
+.ai-page-input-row{
+  display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border);
+  background:var(--surface);flex-shrink:0;
+}
+.ai-send-lg{width:auto;padding:0 20px;font-size:13px;font-weight:700;height:auto}
+</style>
+
+<script>
+// Update context summary when page opens
+const _origOpenAIPage = openAIPage;
+openAIPage = function() {
+  _origOpenAIPage();
+  const accs = S.accounts.filter(a => a.status === 'ok' && a.insights);
+  const el = document.getElementById('aiContextSummary');
+  if (el) {
+    if (!accs.length) {
+      el.textContent = 'Nenhuma conta carregada.';
+    } else {
+      el.innerHTML = accs.map(acc => {
+        const i = acc.insights || {};
+        return `<strong>${acc.name}</strong><br>
+💰 ${fC(i.spend, acc.currency)}<br>
+👁 ${fN(i.impressions)} impressões<br>
+🖱 ${fN(i.clicks)} cliques (${fP(i.ctr)})<br>
+📊 CPM ${fC(i.cpm, acc.currency)}`;
+      }).join('<br><br>');
+    }
+  }
+};
+</script>
+
 </body>
 </html>
