@@ -51,6 +51,15 @@ function saveEvent(platform, eventType, status, payload, meta = {}) {
 // HOTMART
 router.post('/hotmart', (req, res) => {
   try {
+    // Valida hottok
+    const hottok = process.env.HOTMART_HOTTOK;
+    if (hottok) {
+      const received = req.headers['x-hotmart-hottok'];
+      if (!received || received !== hottok) {
+        console.warn('Hotmart webhook: hottok inválido', received);
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+    }
     const payload = req.body;
     const eventMap = {
       'PURCHASE_COMPLETE': 'purchase',
