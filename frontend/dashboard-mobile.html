@@ -94,6 +94,30 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .chart-bar:hover { opacity: 1; }
 .chart-label { font-size: 8px; color: var(--text2); }
 .push-toast { position: fixed; top: 60px; left: 16px; right: 16px; background: var(--green); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; z-index: 999; display: none; text-align: center; }
+
+.meta-wrap{padding:0 16px 12px}
+.meta-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px}
+.meta-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.meta-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.meta-value{font-size:12px;font-weight:700;color:var(--accent)}
+.meta-bar-bg{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.meta-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .5s ease}
+.meta-sub{display:flex;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--text2)}
+.ranking-wrap{padding:0 16px 12px}
+.ranking-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px}
+.ranking-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ranking-item:last-child{border-bottom:none}
+.ranking-pos{font-size:12px;font-weight:700;color:var(--text2);width:20px;text-align:center}
+.ranking-name{font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ranking-count{font-size:11px;color:var(--text2)}
+.ranking-val{font-size:12px;font-weight:700}
+.conv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 16px 12px}
+.conv-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}
+.conv-pct{font-size:18px;font-weight:800}
+.conv-label{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.realtime-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green)}
+.realtime-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse2 1.5s infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
 <script>
 const VAPID_PUBLIC = 'BPs7f9NnC41mxPZ2fCfvSEuX9jiit3wV6kTrVnELWqET6yT_SnUQK7nemwuObSuQiqQd2wB6PdneXjnezllsX7Q';
@@ -119,7 +143,7 @@ if ('serviceWorker' in navigator) {
 <div class="topbar" id="appBar" style="display:none">
   <div class="topbar-logo"><span>⚡ Hotfy</span></div>
   <div class="topbar-right">
-    <span class="badge-user" id="userBadge"></span>
+    <div class="realtime-badge"><div class="realtime-dot"></div>ao vivo</div><span class="badge-user" id="userBadge"></span>
     <button class="btn-refresh" onclick="loadAll()">↻</button>
     <button class="btn-refresh" id="btnPush" onclick="togglePush()" title="Notificações">🔔</button>
   </div>
@@ -149,6 +173,24 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="search-bar">
     <input class="search-input" id="searchInput" type="search" placeholder="Buscar comprador ou produto..." oninput="filterSearch(this.value)">
+  </div>
+  <div class="meta-wrap" id="metaWrap" style="display:none">
+    <div class="meta-box">
+      <div class="meta-header"><span class="meta-label">🎯 Meta diária</span><span class="meta-value" id="metaValue">0 / 300</span></div>
+      <div class="meta-bar-bg"><div class="meta-bar-fill" id="metaFill" style="width:0%"></div></div>
+      <div class="meta-sub"><span id="metaFaltam"></span><span id="metaPct"></span></div>
+    </div>
+  </div>
+  <div class="conv-grid" id="convGrid" style="display:none">
+    <div class="conv-card"><div class="conv-pct" id="convAprov" style="color:var(--green)">0%</div><div class="conv-label">Aprovação</div></div>
+    <div class="conv-card"><div class="conv-pct" id="convBoleto" style="color:var(--blue)">0%</div><div class="conv-label">Boleto</div></div>
+    <div class="conv-card"><div class="conv-pct" id="convReemb" style="color:var(--yellow)">0%</div><div class="conv-label">Reembolso</div></div>
+  </div>
+  <div class="ranking-wrap" id="rankingWrap" style="display:none">
+    <div class="ranking-box">
+      <div class="chart-title">🏆 Top produtos</div>
+      <div id="rankingList"></div>
+    </div>
   </div>
   <div class="chart-wrap" id="chartWrap" style="display:none">
     <div class="chart-box">
@@ -259,7 +301,8 @@ async function loadVendas(){
       const dt = eventDateBRT(e.created_at);
       return dt >= from && dt <= to;
     });
-    computeKpis();renderChart();displayedCount=0;renderList();
+    const _aprov=allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED');
+    computeKpis();renderChart();renderMeta(_aprov);renderConversao();renderRanking(_aprov);displayedCount=0;renderList();
   }catch(e){document.getElementById('txList').innerHTML='<div class="loading-wrap"><div class="empty-text">Erro ao carregar.</div></div>'}
 }
 function computeKpis(){
@@ -300,6 +343,44 @@ function txCard(e){
   return `<div class="tx-card"><div><div class="tx-name">${esc(e.buyer_name||'—')}</div><div class="tx-product">${esc(e.product_name||'')}</div><div class="tx-meta">${e.country?'<span>📍 '+esc(e.country)+'</span>':''}<span>${esc(e.platform||'hotmart')}</span></div><span class="status-badge ${cls}">${lbl}</span></div><div class="tx-right"><div class="tx-value">${e.value?'US$ '+Number(e.value).toFixed(2):'—'}</div><div class="tx-date">${toBRT(e.created_at)}</div></div></div>`;
 }
 
+
+const META_DIARIA = 300;
+function renderMeta(approved) {
+  if(currentPeriod!=='today'){document.getElementById('metaWrap').style.display='none';return}
+  document.getElementById('metaWrap').style.display='block';
+  const n=approved.length,pct=Math.min(100,Math.round(n/META_DIARIA*100)),faltam=Math.max(0,META_DIARIA-n);
+  document.getElementById('metaValue').textContent=n+' / '+META_DIARIA;
+  document.getElementById('metaFill').style.width=pct+'%';
+  document.getElementById('metaFaltam').textContent=faltam>0?'Faltam '+faltam+' vendas':'🎉 Meta batida!';
+  document.getElementById('metaPct').textContent=pct+'%';
+}
+function renderConversao() {
+  const total=allEvents.length;
+  if(!total){document.getElementById('convGrid').style.display='none';return}
+  document.getElementById('convGrid').style.display='grid';
+  const aprov=allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').length;
+  const bol=allEvents.filter(e=>e.event_type==='purchase_billet_printed'||e.event_type==='PURCHASE_BILLET_PRINTED').length;
+  const reemb=allEvents.filter(e=>e.event_type==='refunded'||e.event_type==='PURCHASE_REFUNDED').length;
+  document.getElementById('convAprov').textContent=Math.round(aprov/total*100)+'%';
+  document.getElementById('convBoleto').textContent=Math.round(bol/total*100)+'%';
+  document.getElementById('convReemb').textContent=Math.round(aprov>0?reemb/aprov*100:0)+'%';
+}
+function renderRanking(approved) {
+  if(!approved.length){document.getElementById('rankingWrap').style.display='none';return}
+  document.getElementById('rankingWrap').style.display='block';
+  const map={};
+  approved.forEach(e=>{const p=e.product_name||'Sem nome';if(!map[p])map[p]={n:0,v:0};map[p].n++;map[p].v+=e.value||0});
+  const sorted=Object.entries(map).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('rankingList').innerHTML=sorted.map(([name,{n,v}],i)=>`
+    <div class="ranking-item">
+      <span class="ranking-pos">${medals[i]||i+1}</span>
+      <span class="ranking-name">${esc(name)}</span>
+      <span class="ranking-count">${n}x</span>
+      <span class="ranking-val">US$ ${v.toFixed(0)}</span>
+    </div>`).join('');
+}
+setInterval(()=>loadVendas(), 30000);
 // ── PESQUISA ──
 let searchQuery = '';
 function filterSearch(q) {
