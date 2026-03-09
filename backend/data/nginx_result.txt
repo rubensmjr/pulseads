@@ -1,0 +1,18 @@
+[eval]:12
+} else {
+^
+
+SyntaxError: Unexpected token '}'
+    at makeContextifyScript (node:internal/vm:185:14)
+    at node:internal/process/execution:107:22
+    at [eval]-wrapper:6:24
+    at runScript (node:internal/process/execution:101:62)
+    at evalScript (node:internal/process/execution:133:3)
+    at node:internal/main/eval_string:51:3
+
+Node.js v20.20.1
+nginx: [warn] conflicting server name "hotfy.digital" on 0.0.0.0:80, ignored
+nginx: [warn] conflicting server name "www.hotfy.digital" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+RELOAD_OK

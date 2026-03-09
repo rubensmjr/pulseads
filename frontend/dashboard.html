@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+if (/Mobile|Android|iPhone|iPad|Tablet|iPod/i.test(navigator.userAgent)) {
+  window.location.replace('/dashboard-mobile.html');
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hotfy — Dashboard</title>
