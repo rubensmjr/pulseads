@@ -2809,7 +2809,8 @@ function renderVendasTable() {
             <td><span class="platform-badge">${platformIcon[e.platform]||'⚫'} ${e.platform}</span></td>
             <td style="font-family:'Inter',sans-serif;font-weight:700">${fmt(e.value, e.currency)}</td>
             <td>${badgeMap[e.event_type] || e.event_type}</td>
-            <td style="font-size:10px;color:var(--text3);font-family:monospace">${e.transaction_id||'—'}</td>
+            <td>${e.country||"-"}</td>
+              <td style="font-size:10px;color:var(--text3);font-family:monospace">${e.transaction_id||'—'}</td>
           </tr>
         `).join('')}
       </tbody>
