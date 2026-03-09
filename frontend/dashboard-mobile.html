@@ -112,10 +112,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
     </div>
     <div class="filter-row">
       <div class="filter-chip active" onclick="setFilter(this,'all')">Todos</div>
-      <div class="filter-chip" onclick="setFilter(this,'PURCHASE_APPROVED')">✓ Vendas</div>
-      <div class="filter-chip" onclick="setFilter(this,'PURCHASE_REFUNDED')">↩ Reembolsos</div>
-      <div class="filter-chip" onclick="setFilter(this,'PURCHASE_CHARGEBACK')">⚠ Chargeback</div>
-      <div class="filter-chip" onclick="setFilter(this,'PURCHASE_BILLET_PRINTED')">📄 Boleto</div>
+      <div class="filter-chip" onclick="setFilter(this,'purchase')">✓ Vendas</div>
+      <div class="filter-chip" onclick="setFilter(this,'refunded')">↩ Reembolsos</div>
+      <div class="filter-chip" onclick="setFilter(this,'chargeback')">⚠ Chargeback</div>
+      <div class="filter-chip" onclick="setFilter(this,'purchase_billet_printed')">📄 Boleto</div>
     </div>
     <div class="section-header"><span class="section-title">Transações</span><span class="section-count" id="txCount"></span></div>
     <div class="tx-list" id="txList"><div class="loading-wrap"><div class="spinner"></div></div></div>
@@ -179,6 +179,18 @@ function switchTab(tab){
 }
 function loadAll(){loadVendas()}
 function toBRT(s){if(!s)return'-';const d=new Date(s.replace(' ','T')+'Z');return d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+function periodRange(){
+  const now=new Date(),brt=new Date(now.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
+  const pad=n=>String(n).padStart(2,'0'),fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  let from,to;
+  if(currentPeriod==='today'){from=fmt(brt);to=fmt(brt)}
+  else if(currentPeriod==='yesterday'){const y=new Date(brt);y.setDate(y.getDate()-1);from=fmt(y);to=fmt(y)}
+  else if(currentPeriod==='7d'){const d=new Date(brt);d.setDate(d.getDate()-6);from=fmt(d);to=fmt(brt)}
+  else if(currentPeriod==='14d'){const d=new Date(brt);d.setDate(d.getDate()-13);from=fmt(d);to=fmt(brt)}
+  else if(currentPeriod==='30d'){const d=new Date(brt);d.setDate(d.getDate()-29);from=fmt(d);to=fmt(brt)}
+  else if(currentPeriod==='month'){from=`${brt.getFullYear()}-${pad(brt.getMonth()+1)}-01`;to=fmt(brt)}
+  return {from,to};
+}
 function periodParams(){
   const now=new Date(),brt=new Date(now.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
   const pad=n=>String(n).padStart(2,'0'),fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -191,22 +203,33 @@ function periodParams(){
   else if(currentPeriod==='month'){from=`${brt.getFullYear()}-${pad(brt.getMonth()+1)}-01`;to=fmt(brt)}
   return `dateFrom=${from}&dateTo=${to}`;
 }
+function eventDateBRT(s) {
+  if (!s) return '';
+  const d = new Date(s.replace(' ','T')+'Z');
+  return d.toLocaleDateString('en-CA', {timeZone:'America/Sao_Paulo'}); // YYYY-MM-DD
+}
 async function loadVendas(){
   document.getElementById('txList').innerHTML='<div class="loading-wrap"><div class="spinner"></div></div>';
   ['kpiVendas','kpiReceita','kpiReembolso','kpiChargeback'].forEach(id=>document.getElementById(id).textContent='—');
   try{
-    const r=await fetch(`/api/webhook/events?limit=500&${periodParams()}`,{headers:{'Authorization':`Bearer ${token}`}});
+    const r=await fetch(`/api/webhook/events?limit=2000`,{headers:{'Authorization':`Bearer ${token}`}});
     if(r.status===401){localStorage.removeItem('pa_token');location.reload();return}
-    const d=await r.json();allEvents=d.events||[];computeKpis();displayedCount=0;renderList();
+    const d=await r.json();// Filtra por período localmente usando data BRT
+    const {from, to} = periodRange();
+    allEvents = (d.events||[]).filter(e => {
+      const dt = eventDateBRT(e.created_at);
+      return dt >= from && dt <= to;
+    });
+    computeKpis();displayedCount=0;renderList();
   }catch(e){document.getElementById('txList').innerHTML='<div class="loading-wrap"><div class="empty-text">Erro ao carregar.</div></div>'}
 }
 function computeKpis(){
-  const approved=allEvents.filter(e=>e.event_type==='PURCHASE_APPROVED');
-  const refunded=allEvents.filter(e=>e.event_type==='PURCHASE_REFUNDED');
-  const cb=allEvents.filter(e=>e.event_type==='PURCHASE_CHARGEBACK');
+  const approved=allEvents.filter(e=>e.event_type==='PURCHASE_APPROVED'||e.event_type==='purchase');
+  const refunded=allEvents.filter(e=>e.event_type==='PURCHASE_REFUNDED'||e.event_type==='refunded');
+  const cb=allEvents.filter(e=>e.event_type==='PURCHASE_CHARGEBACK'||e.event_type==='chargeback');
   const sum=arr=>arr.reduce((s,e)=>s+(e.value||0),0);
   document.getElementById('kpiVendas').textContent=approved.length;
-  document.getElementById('kpiReceita').textContent='US$ '+（sum(approved)-sum(refunded)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('kpiReceita').textContent='US$ '+(sum(approved)-sum(refunded)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('kpiReembolso').textContent=refunded.length;
   document.getElementById('kpiReembolsoSub').textContent=refunded.length?'US$ '+sum(refunded).toFixed(2):'';
   document.getElementById('kpiChargeback').textContent=cb.length;
@@ -226,7 +249,7 @@ function loadMore(){
   document.getElementById('txList').insertAdjacentHTML('beforeend',evs.slice(prev,displayedCount).map(e=>txCard(e)).join(''));
 }
 function txCard(e){
-  const badges={PURCHASE_APPROVED:['venda','✓ Venda'],PURCHASE_REFUNDED:['reembolso','↩ Reembolso'],PURCHASE_CHARGEBACK:['cancelado','⚠ Chargeback'],PURCHASE_BILLET_PRINTED:['boleto','📄 Boleto'],PURCHASE_CANCELED:['cancelado','✕ Cancelado']};
+  const badges={PURCHASE_APPROVED:['venda','✓ Venda'],PURCHASE_REFUNDED:['reembolso','↩ Reembolso'],PURCHASE_CHARGEBACK:['cancelado','⚠ Chargeback'],PURCHASE_BILLET_PRINTED:['boleto','📄 Boleto'],PURCHASE_CANCELED:['cancelado','✕ Cancelado'],PURCHASE_PROTEST:['cancelado','⚠ Protesto'],purchase:['venda','✓ Venda'],purchase_billet_printed:['boleto','📄 Boleto'],purchase_refunded:['reembolso','↩ Reembolso'],purchase_canceled:['cancelado','✕ Cancelado']};
   const[cls,lbl]=badges[e.event_type]||['carrinho',e.event_type];
   return `<div class="tx-card"><div><div class="tx-name">${esc(e.buyer_name||'—')}</div><div class="tx-product">${esc(e.product_name||'')}</div><div class="tx-meta">${e.country?'<span>📍 '+esc(e.country)+'</span>':''}<span>${esc(e.platform||'hotmart')}</span></div><span class="status-badge ${cls}">${lbl}</span></div><div class="tx-right"><div class="tx-value">${e.value?'US$ '+Number(e.value).toFixed(2):'—'}</div><div class="tx-date">${toBRT(e.created_at)}</div></div></div>`;
 }
