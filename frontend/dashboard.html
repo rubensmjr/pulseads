@@ -2695,28 +2695,37 @@ function renderVendasKpis() {
   const liquid   = totalRev - totalRef;
   const refRate  = purchases.length ? ((refunds.length / purchases.length) * 100).toFixed(1) : 0;
 
-  const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  // Moeda predominante nos eventos
+  const dominantCur = (arr) => {
+    const counts = {};
+    arr.forEach(e => { const c = e.currency||'BRL'; counts[c] = (counts[c]||0)+1; });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'BRL';
+  };
+  const purCur = dominantCur(purchases);
+  const refCur = dominantCur(refunds);
+
+  const fmt = (v, cur) => fC(v, cur||'BRL');
 
   document.getElementById('vendasKpis').innerHTML = `
     <div class="vkpi green">
       <div class="vkpi-label">Vendas</div>
       <div class="vkpi-value">${purchases.length}</div>
-      <div class="vkpi-sub">${fmt(totalRev)}</div>
+      <div class="vkpi-sub">${fmt(totalRev, purCur)}</div>
     </div>
     <div class="vkpi blue">
       <div class="vkpi-label">Receita Líquida</div>
-      <div class="vkpi-value">${fmt(liquid)}</div>
+      <div class="vkpi-value">${fmt(liquid, purCur)}</div>
       <div class="vkpi-sub">após reembolsos</div>
     </div>
     <div class="vkpi red">
       <div class="vkpi-label">Reembolsos</div>
       <div class="vkpi-value">${refunds.length}</div>
-      <div class="vkpi-sub">${fmt(totalRef)} • ${refRate}%</div>
+      <div class="vkpi-sub">${fmt(totalRef, refCur)} • ${refRate}%</div>
     </div>
     <div class="vkpi amber">
       <div class="vkpi-label">Chargeback</div>
       <div class="vkpi-value">${chargebacks.length}</div>
-      <div class="vkpi-sub">${fmt(chargebacks.reduce((s,e)=>s+(e.value||0),0))}</div>
+      <div class="vkpi-sub">${fmt(chargebacks.reduce((s,e)=>s+(e.value||0),0), dominantCur(chargebacks))}</div>
     </div>
     <div class="vkpi purple">
       <div class="vkpi-label">Carr. Abandonado</div>
@@ -2772,8 +2781,8 @@ function renderVendasTable() {
     return;
   }
 
-  const fmt = v => v ? 'R$ ' + parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
-  const fmtDate = d => d ? new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+  const fmt = (v, cur) => { if (!v) return '–'; if ((cur||'BRL') !== 'BRL') return 'US$ ' + parseFloat(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); return 'R$ ' + parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); };
+  const fmtDate = d => d ? new Date(d).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'America/Sao_Paulo'}) : '-';
 
   document.getElementById('vendasTableBody').innerHTML = `
     <table class="vendas-table">
@@ -2798,7 +2807,7 @@ function renderVendasTable() {
             </td>
             <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.product_name||''}">${e.product_name||'—'}</td>
             <td><span class="platform-badge">${platformIcon[e.platform]||'⚫'} ${e.platform}</span></td>
-            <td style="font-family:'Inter',sans-serif;font-weight:700">${fmt(e.value)}</td>
+            <td style="font-family:'Inter',sans-serif;font-weight:700">${fmt(e.value, e.currency)}</td>
             <td>${badgeMap[e.event_type] || e.event_type}</td>
             <td style="font-size:10px;color:var(--text3);font-family:monospace">${e.transaction_id||'—'}</td>
           </tr>
