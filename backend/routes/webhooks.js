@@ -90,7 +90,18 @@ router.post('/hotmart', (req, res) => {
         .reduce((s, c) => s + (c.value || 0), 0);
     }
 
-    saveEvent('hotmart', eventType, 'processed', payload, {
+    // Dispara push notification
+  const isApproved = eventType === 'purchase' || eventType === 'PURCHASE_APPROVED';
+  if (isApproved) {
+    const buyerName = payload?.data?.buyer?.name || payload?.buyer?.name || 'Comprador';
+    const priceStr = 'US$ ' + (priceVal ? priceVal.toFixed(2) : '0.00');
+    const country = payload?.data?.buyer?.address?.country || payload?.buyer?.address?.country || '';
+    sendPushToAll({
+      title: '💰 Nova venda!',
+      body: buyerName + ' · ' + priceStr + (country ? ' · ' + country : '')
+    });
+  }
+  saveEvent('hotmart', eventType, 'processed', payload, {
       user_id: producer.ucode || null,
       product_id: product.id?.toString() || null,
       product_name: product.name || null,

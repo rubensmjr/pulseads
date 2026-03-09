@@ -4,8 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const DB_PATH = process.env.DB_PATH || path.join(__dirname,'data','pulseads.db');
 if(!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH),{recursive:true});
-let db;
-function getDb(){ if(!db) db=new Database(DB_PATH); return db; }
+function getDb(){ return new Database(DB_PATH); }
 function init(){
   const db=getDb();
   db.exec(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, plan TEXT NOT NULL DEFAULT 'basic', role TEXT NOT NULL DEFAULT 'user', active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT (datetime('now')), last_login TEXT)`);
@@ -22,7 +21,6 @@ function init(){
     const bcrypt=require('bcryptjs');
     const hash=bcrypt.hashSync(process.env.ADMIN_PASSWORD||'admin123',10);
     db.prepare("INSERT INTO users (name,email,password,plan,role) VALUES (?,?,?,'agency','admin')").run('Admin',process.env.ADMIN_EMAIL||'admin@pulseads.com',hash);
-    console.log('✅ Admin criado: '+process.env.ADMIN_EMAIL);
   }
   console.log('✅ Banco inicializado');
 }
