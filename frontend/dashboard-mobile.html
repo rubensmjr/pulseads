@@ -338,7 +338,19 @@ function renderChart() {
 
 // ── PUSH ──
 async function togglePush() {
-  if (!('Notification' in window)) { showToast('Push não suportado neste browser', 'red'); return; }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  
+  if (isIOS && !isStandalone) {
+    showToast('No iPhone: adicione à tela inicial primeiro (Safari → Compartilhar → Adicionar à tela)', 'blue');
+    setTimeout(() => showToast('Depois abra pelo ícone e ative as notificações 🔔', 'blue'), 3500);
+    return;
+  }
+  
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    showToast('Use Chrome ou Safari 16.4+ para notificações', 'red');
+    return;
+  }
   
   if (Notification.permission === 'granted' && window._swReg) {
     const sub = await window._swReg.pushManager.getSubscription();
@@ -382,7 +394,7 @@ function urlBase64ToUint8Array(base64String) {
 function showToast(msg, color) {
   const t = document.getElementById('pushToast');
   t.textContent = msg;
-  t.style.background = color === 'red' ? 'var(--red)' : 'var(--green)';
+  t.style.background = color === 'red' ? 'var(--red)' : color === 'blue' ? 'var(--accent)' : 'var(--green)';
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
 }

@@ -21,6 +21,7 @@ app.use('/api/accounts',require('./routes/accounts'));
 app.use('/api/meta',require('./routes/meta'));
 app.use('/api/admin',require('./routes/admin'));
 app.use('/api/webhook',require('./routes/webhooks'));
+app.use('/api/push',require('./routes/push').router);
 app.get('/api/health',(req,res)=>res.json({status:'ok'}));
 app.use(express.static(path.join(__dirname,'../frontend')));
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'../frontend/index.html')));
