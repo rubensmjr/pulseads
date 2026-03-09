@@ -2794,13 +2794,14 @@ function renderVendasTable() {
           <th>Plataforma</th>
           <th>Valor</th>
           <th>Status</th>
-          <th>País</th><th>Transação</th>
+          <th>País</th>
+          <th>Transação</th>
         </tr>
       </thead>
       <tbody>
         ${rows.map(e => `
           <tr>
-            <td style="color:var(--text3);white-space:nowrap">${(function(s){if(!s)return"-";const d=new Date(s.replace(" ","T")+"Z");return d.toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})(e.created_at)}</td>
+            <td style="color:var(--text3);white-space:nowrap">${fmtDate(e.created_at)}</td>
             <td>
               <div style="font-weight:600;font-size:12px">${e.buyer_name||'—'}</div>
               <div style="font-size:11px;color:var(--text3)">${e.buyer_email||''}</div>
@@ -2809,7 +2810,8 @@ function renderVendasTable() {
             <td><span class="platform-badge">${platformIcon[e.platform]||'⚫'} ${e.platform}</span></td>
             <td style="font-family:'Inter',sans-serif;font-weight:700">${fmt(e.value, e.currency)}</td>
             <td>${badgeMap[e.event_type] || e.event_type}</td>
-            <td style="font-size:10px;color:var(--text3);font-family:monospace">${e.transaction_id||'—'}</td>
+            <td style="font-size:10px;color:var(--text3);font-family:monospace"><td>${e.country||"-"}</td>
+              <td>${e.transaction_id||'—'}</td>
           </tr>
         `).join('')}
       </tbody>

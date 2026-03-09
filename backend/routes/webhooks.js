@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db');
 
-// Init tables
 function initTables() {
   const db = getDb();
   db.exec(`CREATE TABLE IF NOT EXISTS webhook_events (
@@ -20,6 +19,7 @@ function initTables() {
     currency TEXT DEFAULT 'BRL',
     commission REAL DEFAULT 0,
     transaction_id TEXT,
+    country TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
   db.exec(`CREATE TABLE IF NOT EXISTS webhook_configs (
@@ -34,47 +34,38 @@ function initTables() {
 }
 initTables();
 
-// Helper
 function saveEvent(platform, eventType, status, payload, meta = {}) {
   const db = getDb();
   const stmt = db.prepare(`INSERT INTO webhook_events
-    (platform, event_type, status, payload, user_id, product_id, product_name, buyer_email, buyer_name, value, currency, commission, transaction_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    (platform, event_type, status, payload, user_id, product_id, product_name, buyer_email, buyer_name, value, currency, commission, transaction_id, country)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
   return stmt.run(
     platform, eventType, status, JSON.stringify(payload),
     meta.user_id||null, meta.product_id||null, meta.product_name||null,
     meta.buyer_email||null, meta.buyer_name||null,
-    meta.value||0, meta.currency||'BRL', meta.commission||0, meta.transaction_id||null
+    meta.value||0, meta.currency||'USD', meta.commission||0, meta.transaction_id||null,
+    meta.country||null
   );
 }
 
-// HOTMART
 router.post('/hotmart', (req, res) => {
   try {
-    // Valida hottok
     const hottok = process.env.HOTMART_HOTTOK;
     if (hottok) {
       const received = req.headers['x-hotmart-hottok'];
       if (!received || received !== hottok) {
-        console.warn('Hotmart webhook: hottok inválido', received);
+        console.warn('Hotmart webhook: hottok invalido');
         return res.status(401).json({ error: 'Unauthorized' });
       }
     }
     const payload = req.body;
     const eventMap = {
-      'PURCHASE_COMPLETE': 'purchase',
-      'PURCHASE_APPROVED': 'purchase',
-      'PURCHASE_CANCELED': 'canceled',
-      'PURCHASE_REFUNDED': 'refunded',
-      'PURCHASE_CHARGEBACK': 'chargeback',
-      'PURCHASE_PROTEST': 'purchase_protest',
-      'PURCHASE_DELAYED': 'purchase',
-      'PURCHASE_OUT_OF_SHOPPING_CART': 'abandoned_cart',
+      'PURCHASE_COMPLETE': 'purchase', 'PURCHASE_APPROVED': 'purchase',
+      'PURCHASE_CANCELED': 'canceled', 'PURCHASE_REFUNDED': 'refunded',
+      'PURCHASE_CHARGEBACK': 'chargeback', 'PURCHASE_PROTEST': 'purchase_protest',
+      'PURCHASE_DELAYED': 'purchase', 'PURCHASE_OUT_OF_SHOPPING_CART': 'abandoned_cart',
       'PURCHASE_BILLET_PRINTED': 'purchase_billet_printed',
       'SUBSCRIPTION_CANCELLATION': 'subscription_canceled',
-      'SWITCH_PLAN': 'switch_plan',
-      'UPDATE_SUBSCRIPTION_CHARGE_DATE': 'update_subscription_charge_date',
-      'CLUB_FIRST_ACCESS': 'club_first_access',
     };
     const event = payload.event || '';
     const eventType = eventMap[event] || event.toLowerCase();
@@ -82,16 +73,33 @@ router.post('/hotmart', (req, res) => {
     const buyer = payload.data?.buyer || {};
     const product = payload.data?.product || {};
     const producer = payload.data?.producer || {};
+    const commissions = payload.data?.commissions || [];
+
+    // Valor sempre em USD: original_offer_price > price USD > soma comissoes
+    let priceVal = 0;
+    if (purchase.original_offer_price?.currency_value === 'USD') {
+      priceVal = purchase.original_offer_price.value || 0;
+    } else if (purchase.price?.currency_value === 'USD') {
+      priceVal = purchase.price.value || 0;
+    } else if (purchase.full_price?.currency_value === 'USD') {
+      priceVal = purchase.full_price.value || 0;
+    } else {
+      priceVal = commissions
+        .filter(c => c.currency_value === 'USD')
+        .reduce((s, c) => s + (c.value || 0), 0);
+    }
+
     saveEvent('hotmart', eventType, 'processed', payload, {
       user_id: producer.ucode || null,
       product_id: product.id?.toString() || null,
       product_name: product.name || null,
       buyer_email: buyer.email || null,
       buyer_name: buyer.name || null,
-      value: purchase.price?.value || purchase.full_price?.value || 0,
-      currency: purchase.price?.currency_value || 'BRL',
+      value: priceVal,
+      currency: 'USD',
       commission: purchase.commission_as?.value || 0,
-      transaction_id: purchase.transaction || null
+      transaction_id: purchase.transaction || null,
+      country: purchase.checkout_country?.name || buyer?.address?.country || null
     });
     res.json({ success: true });
   } catch (e) {
@@ -100,7 +108,6 @@ router.post('/hotmart', (req, res) => {
   }
 });
 
-// KIWIFY
 router.post('/kiwify', (req, res) => {
   try {
     const payload = req.body;
@@ -117,12 +124,10 @@ router.post('/kiwify', (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    console.error('Kiwify webhook error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// TICTO
 router.post('/ticto', (req, res) => {
   try {
     const payload = req.body;
@@ -139,12 +144,10 @@ router.post('/ticto', (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    console.error('Ticto webhook error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// EDUZZ
 router.post('/eduzz', (req, res) => {
   try {
     const payload = req.body;
@@ -161,12 +164,10 @@ router.post('/eduzz', (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    console.error('Eduzz webhook error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// PERFECTPAY
 router.post('/perfectpay', (req, res) => {
   try {
     const payload = req.body;
@@ -183,16 +184,14 @@ router.post('/perfectpay', (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    console.error('PerfectPay webhook error:', e);
     res.status(500).json({ error: e.message });
   }
 });
 
-// GET EVENTS
 router.get('/events', (req, res) => {
   try {
     const db = getDb();
-    const { platform, event_type, limit = 100, offset = 0 } = req.query;
+    const { platform, event_type, limit = 500, offset = 0 } = req.query;
     let query = 'SELECT * FROM webhook_events WHERE 1=1';
     const params = [];
     if (platform) { query += ' AND platform=?'; params.push(platform); }
@@ -206,12 +205,11 @@ router.get('/events', (req, res) => {
   }
 });
 
-// GET STATS
 router.get('/stats', (req, res) => {
   try {
     const db = getDb();
-    const { since, until, platform } = req.query;
-    let where = 'WHERE event_type IN (\'purchase\',\'refunded\',\'chargeback\')';
+    const { platform } = req.query;
+    let where = "WHERE event_type IN ('purchase','refunded','chargeback')";
     const params = [];
     if (platform) { where += ' AND platform=?'; params.push(platform); }
     const rows = db.prepare(`SELECT platform, event_type, COUNT(*) as count,
