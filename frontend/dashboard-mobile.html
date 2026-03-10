@@ -432,29 +432,69 @@ async function loadMetaAdsMobile() {
     const h = {'Authorization':'Bearer '+token};
     const accsR = await fetch('/api/meta/accounts', {headers:h});
     const accs = await accsR.json();
-    if(!accs.length) {
+    if(!Array.isArray(accs)||!accs.length) {
       document.getElementById('metaAdsLoading').style.display='none';
       document.getElementById('metaAdsError').style.display='block';
-      document.getElementById('metaAdsError').textContent='Nenhuma conta conectada. Configure no painel desktop.';
+      document.getElementById('metaAdsError').textContent='Nenhuma conta. Configure no desktop.';
       return;
     }
-    // Pega período atual
     const now = new Date();
     const fmt = d => d.toISOString().slice(0,10);
     const since = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
     const until = fmt(now);
-
     const results = await Promise.all(accs.map(async acc => {
       try {
         const r = await fetch('/api/meta/'+acc.id+'/insights?since='+since+'&until='+until, {headers:h});
         const ins = await r.json();
-        return {acc, ins: ins.data?.[0] || ins};
+        return {acc, ins: (ins.data && ins.data[0]) || ins};
       } catch(e) { return {acc, ins:{}}; }
     }));
-
+    const sym = cur => cur==='BRL'?'R$ ':cur==='EUR'?'E ':' US$ ';
     const fC = (v,cur) => {
-      if(!v||isNaN(v)) return '—';
-      const s = cur==='BRL'?'R
+      if(!v||isNaN(v)) return '--';
+      return sym(cur||'USD')+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    };
+    const fN = v => v ? parseInt(v).toLocaleString('pt-BR') : '0';
+    document.getElementById('metaAccsList').innerHTML = results.map(function(item) {
+      const acc=item.acc, ins=item.ins;
+      const spend=parseFloat(ins.spend||0);
+      const impr=parseInt(ins.impressions||0);
+      const clicks=parseInt(ins.clicks||0);
+      const ctr=ins.ctr?parseFloat(ins.ctr).toFixed(2)+'%':(impr>0?(clicks/impr*100).toFixed(2)+'%':'0%');
+      const cpc=ins.cpc?fC(ins.cpc,acc.currency):'--';
+      const conv=((ins.actions||[]).find(function(a){return a.action_type==='purchase';})||{}).value||0;
+      const convVal=parseFloat(((ins.action_values||[]).find(function(a){return a.action_type==='purchase';})||{}).value||0);
+      const lucro=convVal-spend;
+      const roi=spend>0?((convVal-spend)/spend*100).toFixed(0)+'%':'--';
+      const dc=acc.status==='active'?'#22d3a0':acc.status==='paused'?'#facc15':'#888';
+      const lc=lucro>=0?'#22d3a0':'#ef4444';
+      const rc=parseFloat(roi)>=0?'#22d3a0':'#ef4444';
+      const kpi=(label,val,color)=>'<div style="background:#12122a;border-radius:8px;padding:8px"><div style="font-size:10px;color:#888;margin-bottom:2px">'+label+'</div><div style="font-weight:700;font-size:14px'+(color?';color:'+color:'')+'">'+val+'</div></div>';
+      return '<div style="background:#1a1a2e;border-radius:12px;padding:14px;border:1px solid #2a2a4a;margin-bottom:12px">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:10px">'
+        +'<span style="font-weight:700;font-size:14px"><span style="color:'+dc+'">&#9679;</span> '+(acc.name||acc.id)+'</span>'
+        +'<span style="font-size:11px;color:#888">'+(acc.currency||'USD')+'</span>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +kpi('INVEST.',fC(spend,acc.currency),'')
+        +kpi('COMPRAS',fC(convVal,acc.currency),'#22d3a0')
+        +kpi('LUCRO',fC(lucro,acc.currency),lc)
+        +kpi('ROI',roi,rc)
+        +kpi('IMPRESS.',fN(impr),'')
+        +kpi('CTR',ctr,'')
+        +kpi('CONVERS.',fN(conv),'')
+        +kpi('CPC',cpc,'')
+        +'</div></div>';
+    }).join('');
+    document.getElementById('metaAdsLoading').style.display='none';
+    document.getElementById('metaAdsData').style.display='block';
+  } catch(e) {
+    document.getElementById('metaAdsLoading').style.display='none';
+    document.getElementById('metaAdsError').style.display='block';
+    document.getElementById('metaAdsError').textContent='Erro: '+e.message;
+  }
+}
+
 
 function confirmClearHistoryMobile() {
   if(!confirm('⚠️ Apagar TODOS os dados?')) return;
