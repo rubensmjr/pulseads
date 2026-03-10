@@ -202,18 +202,47 @@ if ('serviceWorker' in navigator) {
     <div class="tx-list" id="txList"><div class="loading-wrap"><div class="spinner"></div></div></div>
     <div class="load-more-wrap" id="loadMoreWrap" style="display:none"><button class="btn-load-more" onclick="loadMore()">Carregar mais</button></div>
   </div>
+  <div id="viewFunil" style="display:none">
+  <div style="padding:16px">
+
+    <!-- FILTRO PERÍODO já vem do estado atual -->
+
+    <!-- FUNIL STEPS -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">🎯 Funil de conversão</div>
+      <div id="funilSteps" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <!-- TAXAS -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">📉 Taxas de conversão</div>
+      <div id="funilConvBars" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <!-- TOP CAMPANHAS -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">🏆 Funil por campanha</div>
+      <div id="funilCamps"></div>
+    </div>
+
+  </div>
+</div>
   <div id="viewMeta" style="display:none">
     <div class="meta-empty"><div class="meta-icon">📊</div><h3>Meta Ads</h3><p>Reconecte o token do Meta Ads no painel desktop para ver os dados de campanhas.</p></div>
   </div>
 </div>
 <div class="bottom-tabs" id="appTabs" style="display:none">
   <div style="position:relative;width:100%;display:flex">
-    <div class="tab-indicator" id="tabIndicator" style="width:50%;left:0"></div>
+    <div class="tab-indicator" id="tabIndicator" style="width:33.33%;left:0"></div>
     <button class="tab-btn active" id="tabVendas" onclick="switchTab('vendas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       Vendas
     </button>
-    <button class="tab-btn" id="tabMeta" onclick="switchTab('meta')">
+    <button class="tab-btn" id="tabFunil" onclick="switchTab('funil')" style="flex:1">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v4H4zM6 8h12v4H6zM8 12h8v4H8zM10 16h4v4h-4z"/></svg>
+  <span style="font-size:9px;margin-top:2px">Funil</span>
+</button>
+<button class="tab-btn" id="tabMeta" onclick="switchTab('meta')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       Meta Ads
     </button>
@@ -254,9 +283,12 @@ function setFilter(el,f){document.querySelectorAll('.filter-chip').forEach(x=>x.
 function switchTab(tab){
   document.getElementById('viewVendas').style.display=tab==='vendas'?'block':'none';
   document.getElementById('viewMeta').style.display=tab==='meta'?'block':'none';
+  document.getElementById('viewFunil').style.display=tab==='funil'?'block':'none';
   document.getElementById('tabVendas').classList.toggle('active',tab==='vendas');
   document.getElementById('tabMeta').classList.toggle('active',tab==='meta');
-  document.getElementById('tabIndicator').style.left=tab==='vendas'?'0':'50%';
+  document.getElementById('tabFunil').classList.toggle('active',tab==='funil');
+  document.getElementById('tabIndicator').style.left=tab==='vendas'?'0':tab==='meta'?'33.33%':'66.66%';
+  if(tab==='funil') renderFunil();
 }
 function loadAll(){loadVendas()}
 function toBRT(s){if(!s)return'-';const d=new Date(s.replace(' ','T')+'Z');return d.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
@@ -381,6 +413,84 @@ function renderRanking(approved) {
     </div>`).join('');
 }
 setInterval(()=>loadVendas(), 30000);
+
+// ── FUNIL ──
+function renderFunil() {
+  // Pega dados do pixel
+  const range = {from:'',to:''};
+  const headers = {'Authorization':'Bearer '+token};
+
+  fetch('/api/pixel/stats?period='+(currentPeriod||'today'), {headers})
+  .then(r=>r.json()).then(pix=>{
+    const visitas = pix.pageviews||0;
+    const leads   = pix.leads||0;
+    const cliques = pix.clicks||0;
+    const vendas  = allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').length;
+    const receita = allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').reduce((s,e)=>s+(e.value||0),0);
+
+    const steps = [
+      {icon:'👁️',label:'Visitas',val:visitas,color:'#3b82f6'},
+      {icon:'📧',label:'Leads',val:leads,color:'#7c6aff'},
+      {icon:'🖱️',label:'Cliques CTA',val:cliques,color:'#f59e0b'},
+      {icon:'💰',label:'Vendas',val:vendas,color:'#22d3a0'},
+    ];
+    const maxV = Math.max(...steps.map(s=>s.val),1);
+
+    document.getElementById('funilSteps').innerHTML = steps.map((s,i)=>{
+      const pct = i===0?100:(steps[0].val>0?(s.val/steps[0].val*100).toFixed(1):0);
+      const w = Math.max(5, s.val/maxV*100);
+      return `<div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px;width:24px">${s.icon}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;color:var(--text2)">${s.label}</span>
+            <span style="font-size:13px;font-weight:800;color:${s.color}">${s.val} <span style="font-size:10px;font-weight:400;color:var(--text2)">${i>0?'('+pct+'%)':''}</span></span>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${w}%;background:${s.color};border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Barras de conversão
+    const convs = [
+      {label:'Visita → Lead', n:leads, d:visitas, c:'#7c6aff'},
+      {label:'Lead → Clique', n:cliques, d:leads||1, c:'#f59e0b'},
+      {label:'Clique → Venda', n:vendas, d:cliques||1, c:'#22d3a0'},
+      {label:'Visita → Venda', n:vendas, d:visitas||1, c:'#3b82f6'},
+    ];
+    document.getElementById('funilConvBars').innerHTML = convs.map(c=>{
+      const pct = c.d>0 ? Math.min(100,c.n/c.d*100) : 0;
+      return `<div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--text2)">${c.label}</span>
+          <span style="font-size:11px;font-weight:700;color:${c.c}">${pct.toFixed(1)}%</span>
+        </div>
+        <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:${c.c};border-radius:3px;transition:width .8s ease"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Campanhas do pixel
+    const camps = pix.campaigns||[];
+    if(camps.length) {
+      document.getElementById('funilCamps').innerHTML = camps.slice(0,5).map(c=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.utm_campaign||'—')}</span>
+          <span style="font-size:12px;color:#3b82f6;margin-left:8px">${c.views}v</span>
+        </div>`).join('');
+    } else {
+      document.getElementById('funilCamps').innerHTML = `<div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">
+        Instale o pixel nas suas páginas para ver dados por campanha<br>
+        <span style="color:var(--accent);font-size:11px;margin-top:6px;display:block">&lt;script src="https://hotfy.digital/pixel.js"&gt;&lt;/script&gt;</span>
+      </div>`;
+    }
+  }).catch(()=>{
+    document.getElementById('funilSteps').innerHTML = '<div style="text-align:center;color:var(--text2);font-size:12px;padding:20px">Carregando...</div>';
+  });
+}
 // ── PESQUISA ──
 let searchQuery = '';
 function filterSearch(q) {

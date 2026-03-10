@@ -587,6 +587,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="view-tabs" id="viewTabs">
         <button class="view-tab active" onclick="switchView('meta')" id="tab-meta">📊 Meta Ads</button>
         <button class="view-tab" onclick="switchView('vendas')" id="tab-vendas">🛒 Vendas</button>
+        <button class="view-tab" onclick="window.location.href='/funil.html'" id="tab-funil">🎯 Funil</button>
       </div>
     <div class="topbar-right">
       <button class="alert-badge" onclick="openAlertsModal()" id="alertBtn" title="Alertas">
@@ -2690,6 +2691,7 @@ async function loadVendas() {
 }
 
 function renderVendasKpis() {
+  if(typeof renderDesktopExtras === "function") { try { renderDesktopExtras(arguments[0]||[]); } catch(e){} }
   const purchases   = vendasData.filter(e => e.event_type === 'purchase');
   const refunds     = vendasData.filter(e => e.event_type === 'refunded');
   const chargebacks = vendasData.filter(e => e.event_type === 'chargeback');
@@ -2850,7 +2852,47 @@ function renderVendasTable() {
         <input type="text" class="table-search" id="vendasSearch" placeholder="🔍 Buscar comprador..." oninput="renderVendasTable()" style="margin-left:auto;width:200px">
       </div>
       <div class="vendas-table-wrap">
-        <div class="vendas-table-header">
+        
+<!-- META DIÁRIA -->
+<div id="desktopMeta" style="margin:0 24px 16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">🎯 Meta diária</span>
+    <span id="dMetaCount" style="font-size:13px;font-weight:700;color:var(--accent)">—</span>
+    <span id="dMetaPct" style="font-size:12px;color:var(--text2)">—%</span>
+  </div>
+  <div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden">
+    <div id="dMetaBar" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6aff,#22d3a0);border-radius:4px;transition:width 1s ease"></div>
+  </div>
+  <div id="dMetaFaltam" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
+</div>
+
+<!-- TAXAS + TOP PRODUTOS -->
+<div id="desktopTaxas" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 24px 16px">
+  <!-- Taxas de conversão -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px">📊 Taxas de conversão</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+      <div style="background:var(--bg);border-radius:10px;padding:12px">
+        <div id="dTaxaAprov" style="font-size:22px;font-weight:800;color:#22d3a0">—</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:4px">Aprovação</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px">
+        <div id="dTaxaBoleto" style="font-size:22px;font-weight:800;color:#f59e0b">—</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:4px">Boleto</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px">
+        <div id="dTaxaReemb" style="font-size:22px;font-weight:800;color:#ef4444">—</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:4px">Reembolso</div>
+      </div>
+    </div>
+  </div>
+  <!-- Top Produtos -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px">🏆 Top Produtos</div>
+    <div id="dTopProdutos" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
+<div class="vendas-table-header">
           <span class="vendas-table-title">Transações</span>
           <span id="vendasCount" style="font-size:11px;color:var(--text3)"></span>
         </div>

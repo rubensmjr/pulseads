@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hotfy — Funil de Vendas</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e2a;
+  --border:#232736;--text:#e8eaf0;--text2:#8b92a8;--text3:#555e7a;
+  --accent:#7c6aff;--green:#22d3a0;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+
+/* TOP BAR */
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:15px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
+.topbar-nav{display:flex;gap:8px}
+.topbar-nav a{padding:6px 14px;border-radius:8px;font-size:13px;text-decoration:none;color:var(--text2);transition:.2s}
+.topbar-nav a:hover{background:rgba(124,106,255,.1);color:var(--text)}
+.topbar-nav a.active{background:var(--accent);color:#fff}
+.topbar-right{display:flex;align-items:center;gap:8px}
+
+/* FILTROS */
+.filters{display:flex;gap:8px;padding:16px 24px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);background:var(--bg2)}
+.period-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:.2s}
+.period-pill:hover{border-color:var(--accent);color:var(--text)}
+.period-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* MAIN LAYOUT */
+.main{display:grid;grid-template-columns:1fr 380px;gap:20px;padding:24px;max-width:1400px;margin:0 auto}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+
+/* FUNIL GEOMÉTRICO */
+.funil-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px}
+.funil-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.funil-svg-wrap{display:flex;justify-content:center;margin-bottom:32px}
+.funil-steps{display:flex;flex-direction:column;gap:0}
+.funil-step{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.funil-step:last-child{border-bottom:none}
+.funil-step-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.funil-step-info{flex:1}
+.funil-step-label{font-size:12px;color:var(--text2);margin-bottom:2px}
+.funil-step-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.funil-step-bar-wrap{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:6px}
+.funil-step-bar{height:100%;border-radius:3px;transition:width 1s ease}
+.funil-step-pct{font-size:11px;color:var(--text2);font-weight:500;flex-shrink:0;text-align:right;min-width:50px}
+.arrow-down{display:flex;justify-content:center;align-items:center;height:20px;color:var(--text3);font-size:14px}
+
+/* LADO DIREITO */
+.right-col{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:16px}
+.conv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.conv-label{font-size:13px;color:var(--text2)}
+.conv-val{font-size:14px;font-weight:700}
+.conv-bar-wrap{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:16px;margin-top:-8px}
+.conv-bar{height:100%;border-radius:2px;transition:width 1s ease}
+
+/* CAMPANHAS */
+.camp-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.camp-row:last-child{border-bottom:none}
+.camp-name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.camp-badge{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(124,106,255,.15);color:var(--accent);font-weight:600}
+.roas-badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
+
+/* KPI MINI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.kpi-mini{background:var(--bg3);border-radius:12px;padding:12px}
+.kpi-mini-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kpi-mini-val{font-size:18px;font-weight:800}
+
+/* LOGIN */
+#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:40px;width:320px;text-align:center}
+.login-box h2{font-size:22px;font-weight:800;margin-bottom:6px}
+.login-box p{color:var(--text2);font-size:13px;margin-bottom:24px}
+.inp{width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;outline:none}
+.inp:focus{border-color:var(--accent)}
+.btn-primary{width:100%;padding:11px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-primary:hover{opacity:.9}
+.err{color:var(--red);font-size:12px;margin-top:8px}
+
+.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+
+/* FUNIL SVG */
+.funil-geometric{width:100%;max-width:400px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div style="font-size:40px;margin-bottom:12px">⚡</div>
+    <h2>Hotfy</h2>
+    <p>Acesse seu funil de vendas</p>
+    <input class="inp" type="email" id="loginEmail" placeholder="E-mail" />
+    <input class="inp" type="password" id="loginPass" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="btn-primary" onclick="doLogin()">Entrar</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appWrap" style="display:none">
+
+  <div class="topbar">
+    <div class="topbar-logo">⚡ Hotfy</div>
+    <div class="topbar-nav">
+      <a href="/dashboard.html" id="navMeta">📊 Meta Ads</a>
+      <a href="/dashboard.html?view=vendas" id="navVendas">🛒 Vendas</a>
+      <a href="/funil.html" class="active" id="navFunil">🎯 Funil</a>
+    </div>
+    <div class="topbar-right">
+      <span class="pulse"></span>
+      <span style="font-size:12px;color:var(--text2)" id="topUser"></span>
+      <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer">Sair</button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="period-pill active" data-p="today">Hoje</button>
+    <button class="period-pill" data-p="yesterday">Ontem</button>
+    <button class="period-pill" data-p="last_7d">7 dias</button>
+    <button class="period-pill" data-p="last_14d">14 dias</button>
+    <button class="period-pill" data-p="last_30d">30 dias</button>
+    <button class="period-pill" data-p="this_month">Este mês</button>
+    <span style="margin-left:auto;font-size:12px;color:var(--text3)" id="lastUpdate"></span>
+  </div>
+
+  <div class="main">
+
+    <!-- FUNIL GEOMÉTRICO -->
+    <div class="funil-wrap">
+      <div class="funil-title">🎯 Funil de conversão</div>
+
+      <!-- SVG GEOMÉTRICO -->
+      <div class="funil-svg-wrap">
+        <svg class="funil-geometric" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:.9"/>
+              <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:.9"/>
+            </linearGradient>
+            <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#7c6aff;stop-opacity:.9"/>
+              <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:.9"/>
+            </linearGradient>
+            <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:.9"/>
+              <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:.9"/>
+            </linearGradient>
+            <linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#22d3a0;stop-opacity:.9"/>
+              <stop offset="100%" style="stop-color:#34d399;stop-opacity:.9"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- NÍVEL 1: VISITAS (topo largo) -->
+          <polygon id="svgN1" points="20,10 380,10 350,74 50,74" fill="url(#g1)" opacity="1"/>
+          <text x="200" y="36" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">👁️ VISITAS</text>
+          <text id="svgV1" x="200" y="56" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
+
+          <!-- SETA 1 -->
+          <text x="200" y="88" text-anchor="middle" fill="#555e7a" font-size="14">▼</text>
+          <text id="svgP1" x="340" y="88" text-anchor="middle" fill="#8b92a8" font-size="10">—</text>
+
+          <!-- NÍVEL 2: LEADS -->
+          <polygon id="svgN2" points="50,95 350,95 320,159 80,159" fill="url(#g2)" opacity="1"/>
+          <text x="200" y="122" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">📧 LEADS</text>
+          <text id="svgV2" x="200" y="142" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
+
+          <!-- SETA 2 -->
+          <text x="200" y="173" text-anchor="middle" fill="#555e7a" font-size="14">▼</text>
+          <text id="svgP2" x="340" y="173" text-anchor="middle" fill="#8b92a8" font-size="10">—</text>
+
+          <!-- NÍVEL 3: CLIQUES CTA -->
+          <polygon id="svgN3" points="80,180 320,180 290,244 110,244" fill="url(#g3)" opacity="1"/>
+          <text x="200" y="207" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">🖱️ CLIQUES CTA</text>
+          <text id="svgV3" x="200" y="227" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
+
+          <!-- SETA 3 -->
+          <text x="200" y="258" text-anchor="middle" fill="#555e7a" font-size="14">▼</text>
+          <text id="svgP3" x="340" y="258" text-anchor="middle" fill="#8b92a8" font-size="10">—</text>
+
+          <!-- NÍVEL 4: VENDAS (fundo estreito) -->
+          <polygon id="svgN4" points="110,265 290,265 260,310 140,310" fill="url(#g4)" opacity="1" filter="url(#glow)"/>
+          <text x="200" y="285" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">💰 VENDAS</text>
+          <text id="svgV4" x="200" y="305" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
+        </svg>
+      </div>
+
+      <!-- DETALHES DOS STEPS -->
+      <div class="funil-steps" id="funilSteps">
+        <!-- preenchido por JS -->
+      </div>
+    </div>
+
+    <!-- COLUNA DIREITA -->
+    <div class="right-col">
+
+      <!-- KPIs -->
+      <div class="card">
+        <div class="card-title">📈 Resumo</div>
+        <div class="kpi-grid">
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Receita</div>
+            <div class="kpi-mini-val" id="kpiReceita" style="color:var(--green)">—</div>
+          </div>
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Vendas</div>
+            <div class="kpi-mini-val" id="kpiVendas" style="color:var(--blue)">—</div>
+          </div>
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Ticket Médio</div>
+            <div class="kpi-mini-val" id="kpiTicket" style="color:var(--yellow)">—</div>
+          </div>
+          <div class="kpi-mini">
+            <div class="kpi-mini-label">Conv. Geral</div>
+            <div class="kpi-mini-val" id="kpiConv" style="color:var(--accent)">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAXAS DE CONVERSÃO -->
+      <div class="card">
+        <div class="card-title">📉 Taxas por etapa</div>
+        <div id="convRates">
+          <!-- preenchido por JS -->
+        </div>
+      </div>
+
+      <!-- TOP CAMPANHAS -->
+      <div class="card">
+        <div class="card-title">🏆 Por campanha</div>
+        <div id="campTable">
+          <div style="text-align:center;padding:20px;color:var(--text2);font-size:12px;line-height:1.8">
+            Instale o pixel nas páginas para ver dados por campanha:<br>
+            <code style="color:var(--accent);font-size:11px">&lt;script src="https://hotfy.digital/pixel.js"&gt;&lt;/script&gt;</code>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let token = '';
+let period = 'today';
+let allVendas = [];
+
+// ─── AUTH ───
+function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass  = document.getElementById('loginPass').value;
+  fetch(API+'/api/auth/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, password:pass})
+  }).then(r=>r.json()).then(d=>{
+    if(d.token) {
+      token = d.token;
+      localStorage.setItem('pa_token', token);
+      localStorage.setItem('pa_user', JSON.stringify(d.user||{}));
+      init();
+    } else {
+      document.getElementById('loginErr').textContent = d.error||'Erro ao entrar';
+    }
+  }).catch(()=>{ document.getElementById('loginErr').textContent='Erro de conexão'; });
+}
+
+function logout() {
+  localStorage.removeItem('pa_token');
+  localStorage.removeItem('pa_user');
+  location.reload();
+}
+
+function mobileCheck() { window.location.href = '/dashboard-mobile.html'; }
+
+function init() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('appWrap').style.display = 'block';
+  const u = JSON.parse(localStorage.getItem('pa_user')||'{}');
+  document.getElementById('topUser').textContent = u.name||u.email||'';
+  setupPeriod();
+  load();
+}
+
+// Auto-login
+const _t = localStorage.getItem('pa_token');
+if (_t) { token = _t; init(); }
+
+// ─── PERÍODO ───
+function setupPeriod() {
+  document.querySelectorAll('.period-pill').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.period-pill').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      period = b.dataset.p;
+      load();
+    });
+  });
+}
+
+// ─── LOAD ───
+function load() {
+  const h = {'Authorization':'Bearer '+token};
+  const params = new URLSearchParams({period});
+
+  Promise.all([
+    fetch(API+'/api/webhooks/events?'+params, {headers:h}).then(r=>r.json()),
+    fetch(API+'/api/pixel/stats?'+params, {headers:h}).then(r=>r.json()).catch(()=>({}))
+  ]).then(([eventos, pix]) => {
+    allVendas = (eventos.events||[]).filter(e =>
+      ['purchase','PURCHASE_APPROVED','PURCHASE_COMPLETE'].includes(e.event_type)
+    );
+    render(pix);
+    document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+  });
+}
+
+// ─── RENDER ───
+function fmtNum(n) { return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
+function fmtUSD(n) { return 'US$ ' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function pct(a,b) { return b>0 ? (a/b*100).toFixed(1)+'%' : '—'; }
+
+function render(pix) {
+  const visitas = pix.pageviews || 0;
+  const leads   = pix.leads    || 0;
+  const cliques = pix.clicks   || 0;
+  const vendas  = allVendas.length;
+  const receita = allVendas.reduce((s,e)=>s+(e.value||0),0);
+  const ticket  = vendas>0 ? receita/vendas : 0;
+
+  // KPIs
+  document.getElementById('kpiReceita').textContent = fmtUSD(receita);
+  document.getElementById('kpiVendas').textContent  = vendas;
+  document.getElementById('kpiTicket').textContent  = fmtUSD(ticket);
+  document.getElementById('kpiConv').textContent    = pct(vendas, visitas||1);
+
+  // SVG — valores
+  document.getElementById('svgV1').textContent = fmtNum(visitas) || '—';
+  document.getElementById('svgV2').textContent = fmtNum(leads)   || '—';
+  document.getElementById('svgV3').textContent = fmtNum(cliques) || '—';
+  document.getElementById('svgV4').textContent = fmtNum(vendas)  || '0';
+
+  // SVG — percentuais entre etapas
+  document.getElementById('svgP1').textContent = pct(leads,  visitas);
+  document.getElementById('svgP2').textContent = pct(cliques, leads);
+  document.getElementById('svgP3').textContent = pct(vendas,  cliques);
+
+  // SVG — opacidade das camadas (quem não tem dado fica mais escuro)
+  const vals = [visitas, leads, cliques, vendas];
+  const maxV = Math.max(...vals, 1);
+  ['svgN1','svgN2','svgN3','svgN4'].forEach((id,i) => {
+    document.getElementById(id).setAttribute('opacity', 0.35 + 0.65*(vals[i]/maxV));
+  });
+
+  // Steps detalhados
+  const colors = ['var(--blue)','var(--accent)','var(--yellow)','var(--green)'];
+  const steps  = [
+    {icon:'👁️', label:'Visitas',     val:visitas, c:colors[0]},
+    {icon:'📧', label:'Leads',       val:leads,   c:colors[1]},
+    {icon:'🖱️', label:'Cliques CTA', val:cliques, c:colors[2]},
+    {icon:'💰', label:'Vendas',      val:vendas,  c:colors[3]},
+  ];
+  document.getElementById('funilSteps').innerHTML = steps.map((s,i) => {
+    const w = maxV>0 ? Math.max(2, s.val/maxV*100) : 2;
+    const p = i===0 ? 100 : (steps[0].val>0 ? (s.val/steps[0].val*100).toFixed(1) : 0);
+    return `
+      <div class="funil-step">
+        <div class="funil-step-icon" style="background:${s.c}22">${s.icon}</div>
+        <div class="funil-step-info">
+          <div class="funil-step-label">${s.label}</div>
+          <div class="funil-step-val" style="color:${s.c}">${fmtNum(s.val)||'—'}</div>
+          <div class="funil-step-bar-wrap"><div class="funil-step-bar" style="width:${w}%;background:${s.c}"></div></div>
+        </div>
+        <div class="funil-step-pct" style="color:${s.c}">${i>0?p+'%':''}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Taxas de conversão
+  const convs = [
+    {label:'Visita → Lead',   n:leads,   d:visitas, c:colors[1]},
+    {label:'Lead → Clique',   n:cliques, d:leads,   c:colors[2]},
+    {label:'Clique → Venda',  n:vendas,  d:cliques, c:colors[3]},
+    {label:'Visita → Venda',  n:vendas,  d:visitas, c:colors[0]},
+  ];
+  document.getElementById('convRates').innerHTML = convs.map(c => {
+    const p = c.d>0 ? Math.min(100, c.n/c.d*100) : 0;
+    return `
+      <div class="conv-row">
+        <span class="conv-label">${c.label}</span>
+        <span class="conv-val" style="color:${c.c}">${p.toFixed(1)}%</span>
+      </div>
+      <div class="conv-bar-wrap"><div class="conv-bar" style="width:${p.toFixed(1)}%;background:${c.c}"></div></div>
+    `;
+  }).join('');
+
+  // Campanhas
+  const camps = pix.campaigns||[];
+  if(camps.length) {
+    document.getElementById('campTable').innerHTML = camps.slice(0,8).map(c => `
+      <div class="camp-row">
+        <span class="camp-name">${esc(c.utm_campaign||'Sem campanha')}</span>
+        <span class="camp-badge">${c.views}v</span>
+      </div>
+    `).join('');
+  }
+}
+
+function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+</script>
+</body>
+</html>
