@@ -82,11 +82,7 @@ router.post('/hotmart', (req, res) => {
     priceVal = purchase.original_offer_price?.value
       || purchase.price?.value
       || purchase.full_price?.value
-      || 0; else {
-      priceVal = commissions
-        .filter(c => c.currency_value === 'USD')
-        .reduce((s, c) => s + (c.value || 0), 0);
-    }
+      || 0;
 
     // Dispara push notification
   const isApproved = eventType === 'purchase' || eventType === 'PURCHASE_APPROVED';
