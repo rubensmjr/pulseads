@@ -1136,7 +1136,7 @@ function renderSingleView(content, title, idx) {
           purchases: ()=>kpi('🎯','Conversoes',fN(conv),'Leads: '+fN(leads),'green',delta(conv,prevConv),'Prev: '+fN(prevConv)),
           leads: ()=>kpi('📋','Leads',fN(leads),'Total de leads','green',delta(leads,prevLeads),'Prev: '+fN(prevLeads)),
             roi: ()=>kpi('💰','ROI',fCa(convValue-i.spend,acc),'Receita - Investimento',convValue-i.spend>=0?'green':'red',null,''),
-          lucro: ()=>{ const l=convValue-parseFloat(i.spend||0); const cur=getCurrency(acc); return kpi('💰','Lucro',fC(l,cur),'Receita de compras − Investimento',l>=0?'green':'red',null,''); },
+          lucro: ()=>{ const pv=parseFloat((i.action_values||[]).find(a=>a.action_type==="purchase")?.value||0); const sp=parseFloat(i.spend||0); const l=pv-sp; const cur=getCurrency(acc); return kpi("💰","Lucro",fC(l,cur),"Receita de compras − Investimento",l>=0?"green":"red",null,""); },
           roas: ()=>kpi('📈','ROI',i.spend>0?(((convValue-i.spend)/i.spend).toFixed(2)+'x'):'—','Retorno sobre gasto','green',null,''),
           ctr: ()=>kpi('🎯','CTR',fP(i.ctr),'Taxa de cliques','amber',delta(i.ctr,pi.ctr),fP(pi.ctr)),
           reach: ()=>kpi('👥','Alcance',fN(i.reach),'Pessoas unicas','blue',delta(i.reach,pi.reach),fN(pi.reach)),
