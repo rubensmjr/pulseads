@@ -230,7 +230,13 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
   <div id="viewMeta" style="display:none">
-    <div class="meta-empty"><div class="meta-icon">📊</div><h3>Meta Ads</h3><p>Reconecte o token do Meta Ads no painel desktop para ver os dados de campanhas.</p></div>
+    <div id="metaAdsContent" style="padding:12px">
+      <div id="metaAdsLoading" style="text-align:center;padding:40px;color:#888">⏳ Carregando...</div>
+      <div id="metaAdsError" style="display:none;text-align:center;padding:40px;color:#ef4444"></div>
+      <div id="metaAdsData" style="display:none">
+        <div id="metaAccsList" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
   </div>
 </div>
 <div class="bottom-tabs" id="appTabs" style="display:none">
@@ -285,6 +291,7 @@ function setFilter(el,f){document.querySelectorAll('.filter-chip').forEach(x=>x.
 function switchTab(tab){
   document.getElementById('viewVendas').style.display=tab==='vendas'?'block':'none';
   document.getElementById('viewMeta').style.display=tab==='meta'?'block':'none';
+    if(tab==='meta') loadMetaAdsMobile();
   document.getElementById('viewFunil').style.display=tab==='funil'?'block':'none';
   document.getElementById('tabVendas').classList.toggle('active',tab==='vendas');
   document.getElementById('tabMeta').classList.toggle('active',tab==='meta');
@@ -415,6 +422,489 @@ function renderRanking(approved) {
     </div>`).join('');
 }
 setInterval(()=>loadVendas(), 30000);
+
+// ── META ADS MOBILE ──
+async function loadMetaAdsMobile() {
+  document.getElementById('metaAdsLoading').style.display='block';
+  document.getElementById('metaAdsError').style.display='none';
+  document.getElementById('metaAdsData').style.display='none';
+  try {
+    const h = {'Authorization':'Bearer '+token};
+    const accsR = await fetch('/api/meta/accounts', {headers:h});
+    const accs = await accsR.json();
+    if(!accs.length) {
+      document.getElementById('metaAdsLoading').style.display='none';
+      document.getElementById('metaAdsError').style.display='block';
+      document.getElementById('metaAdsError').textContent='Nenhuma conta conectada. Configure no painel desktop.';
+      return;
+    }
+    // Pega período atual
+    const now = new Date();
+    const fmt = d => d.toISOString().slice(0,10);
+    const since = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+    const until = fmt(now);
+
+    const results = await Promise.all(accs.map(async acc => {
+      try {
+        const r = await fetch('/api/meta/'+acc.id+'/insights?since='+since+'&until='+until, {headers:h});
+        const ins = await r.json();
+        return {acc, ins: ins.data?.[0] || ins};
+      } catch(e) { return {acc, ins:{}}; }
+    }));
+
+    const fC = (v,cur) => {
+      if(!v||isNaN(v)) return '—';
+      const s = cur==='BRL'?'R
+
+function confirmClearHistoryMobile() {
+  if(!confirm('⚠️ Apagar TODOS os dados?')) return;
+  fetch('/api/admin/clear-history', {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).then(r => r.json()).then(d => {
+    if(d.ok) { alert('✅ Dados apagados!'); location.reload(); }
+    else alert('Erro: ' + (d.error||'Falha'));
+  });
+}
+
+// ── FUNIL ──
+function renderFunil() {
+  // Pega dados do pixel
+  const range = {from:'',to:''};
+  const headers = {'Authorization':'Bearer '+token};
+
+  fetch('/api/pixel/stats?period='+(currentPeriod||'today'), {headers})
+  .then(r=>r.json()).then(pix=>{
+    const visitas = pix.pageviews||0;
+    const leads   = pix.leads||0;
+    const cliques = pix.clicks||0;
+    const vendas  = allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').length;
+    const receita = allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').reduce((s,e)=>s+(e.value||0),0);
+
+    const steps = [
+      {icon:'👁️',label:'Visitas',val:visitas,color:'#3b82f6'},
+      {icon:'📧',label:'Leads',val:leads,color:'#7c6aff'},
+      {icon:'🖱️',label:'Cliques CTA',val:cliques,color:'#f59e0b'},
+      {icon:'💰',label:'Vendas',val:vendas,color:'#22d3a0'},
+    ];
+    const maxV = Math.max(...steps.map(s=>s.val),1);
+
+    document.getElementById('funilSteps').innerHTML = steps.map((s,i)=>{
+      const pct = i===0?100:(steps[0].val>0?(s.val/steps[0].val*100).toFixed(1):0);
+      const w = Math.max(5, s.val/maxV*100);
+      return `<div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px;width:24px">${s.icon}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;color:var(--text2)">${s.label}</span>
+            <span style="font-size:13px;font-weight:800;color:${s.color}">${s.val} <span style="font-size:10px;font-weight:400;color:var(--text2)">${i>0?'('+pct+'%)':''}</span></span>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${w}%;background:${s.color};border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Barras de conversão
+    const convs = [
+      {label:'Visita → Lead', n:leads, d:visitas, c:'#7c6aff'},
+      {label:'Lead → Clique', n:cliques, d:leads||1, c:'#f59e0b'},
+      {label:'Clique → Venda', n:vendas, d:cliques||1, c:'#22d3a0'},
+      {label:'Visita → Venda', n:vendas, d:visitas||1, c:'#3b82f6'},
+    ];
+    document.getElementById('funilConvBars').innerHTML = convs.map(c=>{
+      const pct = c.d>0 ? Math.min(100,c.n/c.d*100) : 0;
+      return `<div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--text2)">${c.label}</span>
+          <span style="font-size:11px;font-weight:700;color:${c.c}">${pct.toFixed(1)}%</span>
+        </div>
+        <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:${c.c};border-radius:3px;transition:width .8s ease"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Campanhas do pixel
+    const camps = pix.campaigns||[];
+    if(camps.length) {
+      document.getElementById('funilCamps').innerHTML = camps.slice(0,5).map(c=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.utm_campaign||'—')}</span>
+          <span style="font-size:12px;color:#3b82f6;margin-left:8px">${c.views}v</span>
+        </div>`).join('');
+    } else {
+      document.getElementById('funilCamps').innerHTML = `<div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">
+        Instale o pixel nas suas páginas para ver dados por campanha<br>
+        <span style="color:var(--accent);font-size:11px;margin-top:6px;display:block">&lt;script src="https://hotfy.digital/pixel.js"&gt;&lt;/script&gt;</span>
+      </div>`;
+    }
+  }).catch(()=>{
+    document.getElementById('funilSteps').innerHTML = '<div style="text-align:center;color:var(--text2);font-size:12px;padding:20px">Carregando...</div>';
+  });
+}
+// ── PESQUISA ──
+let searchQuery = '';
+function filterSearch(q) {
+  searchQuery = q.toLowerCase();
+  renderList();
+}
+
+// ── GRÁFICO ──
+function renderChart() {
+  const approved = allEvents.filter(e => e.event_type === 'purchase' || e.event_type === 'PURCHASE_APPROVED');
+  if (!approved.length) { document.getElementById('chartWrap').style.display = 'none'; return; }
+  
+  document.getElementById('chartWrap').style.display = 'block';
+  const hours = Array(24).fill(0);
+  approved.forEach(e => {
+    const d = new Date(e.created_at.replace(' ','T')+'Z');
+    const h = new Date(d.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})).getHours();
+    hours[h]++;
+  });
+  
+  const max = Math.max(...hours, 1);
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})).getHours();
+  
+  // Mostra só horas com atividade + algumas em volta
+  const relevant = hours.map((v,i) => ({h:i,v})).filter((x,i) => {
+    return hours.slice(Math.max(0,i-2), Math.min(24,i+3)).some(v=>v>0);
+  }).slice(0, 16);
+  
+  document.getElementById('chartBars').innerHTML = relevant.map(({h,v}) => `
+    <div class="chart-bar-wrap" title="${h}h: ${v} vendas">
+      <div class="chart-bar" style="height:${Math.max(4, (v/max)*56)}px;opacity:${h===now?1:.6};background:${h===now?'var(--green)':'var(--accent)'}"></div>
+      <div class="chart-label">${h}h</div>
+    </div>
+  `).join('');
+}
+
+// ── PUSH ──
+async function togglePush() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  
+  if (isIOS && !isStandalone) {
+    showToast('No iPhone: adicione à tela inicial primeiro (Safari → Compartilhar → Adicionar à tela)', 'blue');
+    setTimeout(() => showToast('Depois abra pelo ícone e ative as notificações 🔔', 'blue'), 3500);
+    return;
+  }
+  
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    showToast('Use Chrome ou Safari 16.4+ para notificações', 'red');
+    return;
+  }
+  
+  if (Notification.permission === 'granted' && window._swReg) {
+    const sub = await window._swReg.pushManager.getSubscription();
+    if (sub) {
+      await sub.unsubscribe();
+      await fetch('/api/push/unsubscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({endpoint: sub.endpoint}) });
+      document.getElementById('btnPush').textContent = '🔔';
+      showToast('Notificações desativadas');
+      return;
+    }
+  }
+  
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { showToast('Permissão negada'); return; }
+  
+  try {
+    await navigator.serviceWorker.ready;
+    const sub = await window._swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+localStorage.getItem('pa_token')},
+      body: JSON.stringify({ subscription: sub, user_id: 1 })
+    });
+    document.getElementById('btnPush').textContent = '🔕';
+    showToast('✅ Notificações ativadas!');
+  } catch(e) {
+    showToast('Erro: ' + e.message);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
+
+function showToast(msg, color) {
+  const t = document.getElementById('pushToast');
+  t.textContent = msg;
+  t.style.background = color === 'red' ? 'var(--red)' : color === 'blue' ? 'var(--accent)' : 'var(--green)';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</script>
+</body>
+</html>:cur==='EUR'?'€':'US
+
+function confirmClearHistoryMobile() {
+  if(!confirm('⚠️ Apagar TODOS os dados?')) return;
+  fetch('/api/admin/clear-history', {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).then(r => r.json()).then(d => {
+    if(d.ok) { alert('✅ Dados apagados!'); location.reload(); }
+    else alert('Erro: ' + (d.error||'Falha'));
+  });
+}
+
+// ── FUNIL ──
+function renderFunil() {
+  // Pega dados do pixel
+  const range = {from:'',to:''};
+  const headers = {'Authorization':'Bearer '+token};
+
+  fetch('/api/pixel/stats?period='+(currentPeriod||'today'), {headers})
+  .then(r=>r.json()).then(pix=>{
+    const visitas = pix.pageviews||0;
+    const leads   = pix.leads||0;
+    const cliques = pix.clicks||0;
+    const vendas  = allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').length;
+    const receita = allEvents.filter(e=>e.event_type==='purchase'||e.event_type==='PURCHASE_APPROVED').reduce((s,e)=>s+(e.value||0),0);
+
+    const steps = [
+      {icon:'👁️',label:'Visitas',val:visitas,color:'#3b82f6'},
+      {icon:'📧',label:'Leads',val:leads,color:'#7c6aff'},
+      {icon:'🖱️',label:'Cliques CTA',val:cliques,color:'#f59e0b'},
+      {icon:'💰',label:'Vendas',val:vendas,color:'#22d3a0'},
+    ];
+    const maxV = Math.max(...steps.map(s=>s.val),1);
+
+    document.getElementById('funilSteps').innerHTML = steps.map((s,i)=>{
+      const pct = i===0?100:(steps[0].val>0?(s.val/steps[0].val*100).toFixed(1):0);
+      const w = Math.max(5, s.val/maxV*100);
+      return `<div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px;width:24px">${s.icon}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;color:var(--text2)">${s.label}</span>
+            <span style="font-size:13px;font-weight:800;color:${s.color}">${s.val} <span style="font-size:10px;font-weight:400;color:var(--text2)">${i>0?'('+pct+'%)':''}</span></span>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${w}%;background:${s.color};border-radius:3px;transition:width .8s ease"></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Barras de conversão
+    const convs = [
+      {label:'Visita → Lead', n:leads, d:visitas, c:'#7c6aff'},
+      {label:'Lead → Clique', n:cliques, d:leads||1, c:'#f59e0b'},
+      {label:'Clique → Venda', n:vendas, d:cliques||1, c:'#22d3a0'},
+      {label:'Visita → Venda', n:vendas, d:visitas||1, c:'#3b82f6'},
+    ];
+    document.getElementById('funilConvBars').innerHTML = convs.map(c=>{
+      const pct = c.d>0 ? Math.min(100,c.n/c.d*100) : 0;
+      return `<div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--text2)">${c.label}</span>
+          <span style="font-size:11px;font-weight:700;color:${c.c}">${pct.toFixed(1)}%</span>
+        </div>
+        <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:${c.c};border-radius:3px;transition:width .8s ease"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Campanhas do pixel
+    const camps = pix.campaigns||[];
+    if(camps.length) {
+      document.getElementById('funilCamps').innerHTML = camps.slice(0,5).map(c=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.utm_campaign||'—')}</span>
+          <span style="font-size:12px;color:#3b82f6;margin-left:8px">${c.views}v</span>
+        </div>`).join('');
+    } else {
+      document.getElementById('funilCamps').innerHTML = `<div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">
+        Instale o pixel nas suas páginas para ver dados por campanha<br>
+        <span style="color:var(--accent);font-size:11px;margin-top:6px;display:block">&lt;script src="https://hotfy.digital/pixel.js"&gt;&lt;/script&gt;</span>
+      </div>`;
+    }
+  }).catch(()=>{
+    document.getElementById('funilSteps').innerHTML = '<div style="text-align:center;color:var(--text2);font-size:12px;padding:20px">Carregando...</div>';
+  });
+}
+// ── PESQUISA ──
+let searchQuery = '';
+function filterSearch(q) {
+  searchQuery = q.toLowerCase();
+  renderList();
+}
+
+// ── GRÁFICO ──
+function renderChart() {
+  const approved = allEvents.filter(e => e.event_type === 'purchase' || e.event_type === 'PURCHASE_APPROVED');
+  if (!approved.length) { document.getElementById('chartWrap').style.display = 'none'; return; }
+  
+  document.getElementById('chartWrap').style.display = 'block';
+  const hours = Array(24).fill(0);
+  approved.forEach(e => {
+    const d = new Date(e.created_at.replace(' ','T')+'Z');
+    const h = new Date(d.toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})).getHours();
+    hours[h]++;
+  });
+  
+  const max = Math.max(...hours, 1);
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'})).getHours();
+  
+  // Mostra só horas com atividade + algumas em volta
+  const relevant = hours.map((v,i) => ({h:i,v})).filter((x,i) => {
+    return hours.slice(Math.max(0,i-2), Math.min(24,i+3)).some(v=>v>0);
+  }).slice(0, 16);
+  
+  document.getElementById('chartBars').innerHTML = relevant.map(({h,v}) => `
+    <div class="chart-bar-wrap" title="${h}h: ${v} vendas">
+      <div class="chart-bar" style="height:${Math.max(4, (v/max)*56)}px;opacity:${h===now?1:.6};background:${h===now?'var(--green)':'var(--accent)'}"></div>
+      <div class="chart-label">${h}h</div>
+    </div>
+  `).join('');
+}
+
+// ── PUSH ──
+async function togglePush() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  
+  if (isIOS && !isStandalone) {
+    showToast('No iPhone: adicione à tela inicial primeiro (Safari → Compartilhar → Adicionar à tela)', 'blue');
+    setTimeout(() => showToast('Depois abra pelo ícone e ative as notificações 🔔', 'blue'), 3500);
+    return;
+  }
+  
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    showToast('Use Chrome ou Safari 16.4+ para notificações', 'red');
+    return;
+  }
+  
+  if (Notification.permission === 'granted' && window._swReg) {
+    const sub = await window._swReg.pushManager.getSubscription();
+    if (sub) {
+      await sub.unsubscribe();
+      await fetch('/api/push/unsubscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({endpoint: sub.endpoint}) });
+      document.getElementById('btnPush').textContent = '🔔';
+      showToast('Notificações desativadas');
+      return;
+    }
+  }
+  
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { showToast('Permissão negada'); return; }
+  
+  try {
+    await navigator.serviceWorker.ready;
+    const sub = await window._swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+localStorage.getItem('pa_token')},
+      body: JSON.stringify({ subscription: sub, user_id: 1 })
+    });
+    document.getElementById('btnPush').textContent = '🔕';
+    showToast('✅ Notificações ativadas!');
+  } catch(e) {
+    showToast('Erro: ' + e.message);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
+
+function showToast(msg, color) {
+  const t = document.getElementById('pushToast');
+  t.textContent = msg;
+  t.style.background = color === 'red' ? 'var(--red)' : color === 'blue' ? 'var(--accent)' : 'var(--green)';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</script>
+</body>
+</html>;
+      return s+' '+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    };
+    const fN = v => v?parseInt(v).toLocaleString('pt-BR'):'0';
+    const fP = v => v?parseFloat(v).toFixed(2)+'%':'0%';
+
+    document.getElementById('metaAccsList').innerHTML = results.map(({acc,ins}) => {
+      const spend = parseFloat(ins.spend||0);
+      const impr  = parseInt(ins.impressions||0);
+      const clicks= parseInt(ins.clicks||0);
+      const ctr   = ins.ctr ? parseFloat(ins.ctr).toFixed(2)+'%' : (impr>0?(clicks/impr*100).toFixed(2)+'%':'0%');
+      const cpc   = ins.cpc ? fC(ins.cpc, acc.currency||'USD') : '—';
+      const conv  = (ins.actions||[]).find(a=>a.action_type==='purchase')?.value||0;
+      const convVal=(ins.action_values||[]).find(a=>a.action_type==='purchase')?.value||0;
+      const lucro = convVal - spend;
+      const roi   = spend>0?((convVal-spend)/spend*100).toFixed(0)+'%':'—';
+      const dot   = acc.status==='active'?'🟢':acc.status==='paused'?'🟡':'⚫';
+      return `<div style="background:#1a1a2e;border-radius:12px;padding:14px;border:1px solid #2a2a4a">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-weight:700;font-size:14px">${dot} ${acc.name||acc.id}</span>
+          <span style="font-size:11px;color:#888">${acc.currency||'USD'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">💰 INVESTIMENTO</div>
+            <div style="font-weight:700;font-size:14px;color:#fff">${fC(spend,acc.currency||'USD')}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">🛒 COMPRAS</div>
+            <div style="font-weight:700;font-size:14px;color:#22d3a0">${fC(convVal,acc.currency||'USD')}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">💚 LUCRO</div>
+            <div style="font-weight:700;font-size:14px;color:${lucro>=0?'#22d3a0':'#ef4444'}">${fC(lucro,acc.currency||'USD')}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">📈 ROI</div>
+            <div style="font-weight:700;font-size:14px;color:${parseFloat(roi)>=0?'#22d3a0':'#ef4444'}">${roi}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">👁 IMPRESSÕES</div>
+            <div style="font-weight:700;font-size:13px;color:#fff">${fN(impr)}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">🖱 CTR</div>
+            <div style="font-weight:700;font-size:13px;color:#fff">${ctr}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">🎯 CONVERSÕES</div>
+            <div style="font-weight:700;font-size:13px;color:#fff">${fN(conv)}</div>
+          </div>
+          <div style="background:#12122a;border-radius:8px;padding:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:2px">💲 CPC</div>
+            <div style="font-weight:700;font-size:13px;color:#fff">${cpc}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('metaAdsLoading').style.display='none';
+    document.getElementById('metaAdsData').style.display='block';
+  } catch(e) {
+    document.getElementById('metaAdsLoading').style.display='none';
+    document.getElementById('metaAdsError').style.display='block';
+    document.getElementById('metaAdsError').textContent='Erro ao carregar: '+e.message;
+  }
+}
 
 function confirmClearHistoryMobile() {
   if(!confirm('⚠️ Apagar TODOS os dados?')) return;
