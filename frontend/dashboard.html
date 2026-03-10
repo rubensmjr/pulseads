@@ -2691,7 +2691,7 @@ async function loadVendas() {
 }
 
 function renderVendasKpis() {
-  if(typeof renderDesktopExtras === "function") { try { renderDesktopExtras(arguments[0]||[]); } catch(e){} }
+  if(typeof renderDesktopExtras === "function") { try { renderDesktopExtras(vendasData||[]); } catch(e){} }
   const purchases   = vendasData.filter(e => e.event_type === 'purchase');
   const refunds     = vendasData.filter(e => e.event_type === 'refunded');
   const chargebacks = vendasData.filter(e => e.event_type === 'chargeback');
@@ -2825,6 +2825,42 @@ function renderVendasTable() {
   `;
 }
 
+
+// ── META DIÁRIA + TAXAS + TOP PRODUTOS DESKTOP ──
+function renderDesktopExtras(events) {
+  if(!document.getElementById('dMetaBar')) return;
+  const aprovados  = events.filter(e => ['purchase','PURCHASE_APPROVED','PURCHASE_COMPLETE'].includes(e.event_type));
+  const boletos    = events.filter(e => ['WAITING_PAYMENT','billet_printed','BILLET_PRINTED'].includes(e.event_type));
+  const reembolsos = events.filter(e => ['refund','refunded','PURCHASE_REFUNDED'].includes(e.event_type));
+  const total      = events.length || 1;
+  const META = 300;
+  const nA = aprovados.length;
+  const pct = Math.min(100, nA / META * 100);
+  document.getElementById('dMetaBar').style.width   = pct.toFixed(1) + '%';
+  document.getElementById('dMetaCount').textContent = nA + ' / ' + META;
+  document.getElementById('dMetaPct').textContent   = pct.toFixed(0) + '%';
+  document.getElementById('dMetaFaltam').textContent = (META - nA) > 0 ? 'Faltam ' + (META - nA) + ' vendas para bater a meta' : '🎉 Meta batida!';
+  document.getElementById('dTaxaAprov').textContent  = (aprovados.length  / total * 100).toFixed(0) + '%';
+  document.getElementById('dTaxaBoleto').textContent = (boletos.length     / total * 100).toFixed(0) + '%';
+  document.getElementById('dTaxaReemb').textContent  = (reembolsos.length  / total * 100).toFixed(0) + '%';
+  const prodMap = {};
+  aprovados.forEach(e => {
+    const n = e.product_name || e.product || 'Produto';
+    if(!prodMap[n]) prodMap[n] = {n:0, rev:0};
+    prodMap[n].n++; prodMap[n].rev += (e.value||0);
+  });
+  const sorted = Object.entries(prodMap).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  document.getElementById('dTopProdutos').innerHTML = sorted.length
+    ? sorted.map(([nome,d],i) =>
+        '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">' +
+        '<span>' + medals[i] + '</span>' +
+        '<span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + nome + '</span>' +
+        '<span style="font-size:11px;color:#7c6aff;font-weight:700">' + d.n + 'x</span>' +
+        '<span style="font-size:11px;color:#22d3a0;font-weight:700;margin-left:6px">US$ ' + d.rev.toFixed(0) + '</span></div>'
+      ).join('')
+    : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px">Sem dados</div>';
+}
 </script>
 
 
