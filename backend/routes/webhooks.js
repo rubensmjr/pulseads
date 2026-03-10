@@ -61,10 +61,10 @@ router.post('/hotmart', (req, res) => {
     }
     const payload = req.body;
     const eventMap = {
-      'PURCHASE_COMPLETE': 'purchase', 'PURCHASE_APPROVED': 'purchase',
+      'PURCHASE_COMPLETE': 'purchase_complete', 'PURCHASE_APPROVED': 'purchase',
       'PURCHASE_CANCELED': 'canceled', 'PURCHASE_REFUNDED': 'refunded',
       'PURCHASE_CHARGEBACK': 'chargeback', 'PURCHASE_PROTEST': 'purchase_protest',
-      'PURCHASE_DELAYED': 'purchase', 'PURCHASE_OUT_OF_SHOPPING_CART': 'abandoned_cart',
+      'PURCHASE_DELAYED': 'purchase_complete', 'PURCHASE_OUT_OF_SHOPPING_CART': 'abandoned_cart',
       'PURCHASE_BILLET_PRINTED': 'purchase_billet_printed',
       'SUBSCRIPTION_CANCELLATION': 'subscription_canceled',
     };
@@ -78,13 +78,11 @@ router.post('/hotmart', (req, res) => {
 
     // Valor sempre em USD: original_offer_price > price USD > soma comissoes
     let priceVal = 0;
-    if (purchase.original_offer_price?.currency_value === 'USD') {
-      priceVal = purchase.original_offer_price.value || 0;
-    } else if (purchase.price?.currency_value === 'USD') {
-      priceVal = purchase.price.value || 0;
-    } else if (purchase.full_price?.currency_value === 'USD') {
-      priceVal = purchase.full_price.value || 0;
-    } else {
+    // Salva valor em qualquer moeda
+    priceVal = purchase.original_offer_price?.value
+      || purchase.price?.value
+      || purchase.full_price?.value
+      || 0; else {
       priceVal = commissions
         .filter(c => c.currency_value === 'USD')
         .reduce((s, c) => s + (c.value || 0), 0);
@@ -108,7 +106,7 @@ router.post('/hotmart', (req, res) => {
       buyer_email: buyer.email || null,
       buyer_name: buyer.name || null,
       value: priceVal,
-      currency: 'USD',
+      currency: purchase.original_offer_price?.currency_value || purchase.price?.currency_value || purchase.full_price?.currency_value || 'USD',
       commission: purchase.commission_as?.value || 0,
       transaction_id: purchase.transaction || null,
       country: purchase.checkout_country?.name || buyer?.address?.country || null

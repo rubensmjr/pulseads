@@ -110,7 +110,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   <div class="topbar">
     <div class="topbar-logo">⚡ Hotfy</div>
     <div class="topbar-nav">
-      <a href="/dashboard.html" id="navMeta">📊 Meta Ads</a>
+      <a href="/dashboard" id="navMeta">📊 Meta Ads</a>
       <a href="/dashboard.html?view=vendas" id="navVendas">🛒 Vendas</a>
       <a href="/funil.html" class="active" id="navFunil">🎯 Funil</a>
     </div>
@@ -283,7 +283,7 @@ function logout() {
   location.reload();
 }
 
-function mobileCheck() { window.location.href = '/dashboard-mobile.html'; }
+function mobileCheck() { window.location.href='/dashboard'; }
 
 function init() {
   document.getElementById('loginWrap').style.display = 'none';

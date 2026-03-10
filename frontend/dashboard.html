@@ -2829,7 +2829,7 @@ function renderVendasTable() {
 // ── META DIÁRIA + TAXAS + TOP PRODUTOS DESKTOP ──
 function renderDesktopExtras(events) {
   if(!document.getElementById('dMetaBar')) return;
-  const aprovados  = events.filter(e => ['purchase','PURCHASE_APPROVED','PURCHASE_COMPLETE'].includes(e.event_type));
+  const aprovados  = events.filter(e => ['purchase'].includes(e.event_type));
   const boletos    = events.filter(e => ['WAITING_PAYMENT','billet_printed','BILLET_PRINTED'].includes(e.event_type));
   const reembolsos = events.filter(e => ['refund','refunded','PURCHASE_REFUNDED'].includes(e.event_type));
   const total      = events.length || 1;
