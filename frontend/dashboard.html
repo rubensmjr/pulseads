@@ -588,13 +588,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
         <button class="view-tab active" onclick="switchView('meta')" id="tab-meta">📊 Meta Ads</button>
         <button class="view-tab" onclick="switchView('vendas')" id="tab-vendas">🛒 Vendas</button>
         <button class="view-tab" onclick="window.location.href='/funil.html'" id="tab-funil">🎯 Funil</button>
-      </div>
+      
+
+
+
+</div>
     <div class="topbar-right">
       <button class="alert-badge" onclick="openAlertsModal()" id="alertBtn" title="Alertas">
         ⚠️ Alertas
         <span class="alert-count" id="alertCount">0</span>
       </button>
-      <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-right:4px"></div>
+      <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-right:4px">
+
+</div>
+      <button onclick="confirmClearHistory()" style="background:none;border:1px solid rgba(239,68,68,.4);color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onmouseover="this.style.background='rgba(239,68,68,.1)'" onmouseout="this.style.background='none'">🗑️ Limpar</button>
       <button class="btn-icon btn-refresh" onclick="refreshCurrent()">↻ Atualizar</button>
       <button class="btn-icon" onclick="logout()" style="color:var(--text3)">⎋ Sair</button>
       <div class="preset-wrap" id="presetWrap">

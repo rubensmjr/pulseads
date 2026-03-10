@@ -37,4 +37,32 @@ router.put('/plans/:id',adminMiddleware,(req,res)=>{
   getDb().prepare('UPDATE plans SET name=?,max_accounts=?,price_monthly=? WHERE id=?').run(name,max_accounts,price_monthly,req.params.id);
   res.json({message:'Atualizado'});
 });
+
+// Limpar histórico
+router.delete('/clear-history', adminMiddleware, (req, res) => {
+  try {
+    const db = getDb();
+    const tables = ['webhook_events', 'pixel_events', 'push_subscriptions'];
+    const { only } = req.query; // ?only=webhook_events para limpar só uma tabela
+
+    if(only && tables.includes(only)) {
+      const info = db.prepare('DELETE FROM ' + only).run();
+      return res.json({ ok: true, table: only, deleted: info.changes });
+    }
+
+    const results = {};
+    tables.forEach(t => {
+      try {
+        results[t] = db.prepare('DELETE FROM ' + t).run().changes;
+      } catch(e) {
+        results[t] = 'erro: ' + e.message;
+      }
+    });
+
+    res.json({ ok: true, deleted: results });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports=router;
