@@ -134,7 +134,7 @@ if ('serviceWorker' in navigator) {
   <div class="login-logo">⚡</div>
   <h1>Hotfy</h1>
   <p>Dashboard de vendas</p>
-  <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="seu@email.com"></div>
+  <div class="form-group"><label>Email</label><input type="text" inputmode="email" autocomplete="email" id="loginEmail" placeholder="seu@email.com"></div>
   <div class="form-group"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••"></div>
   <button class="btn-login" id="btnLogin">Entrar</button>
   <div class="login-err" id="loginErr"></div>
@@ -145,7 +145,7 @@ if ('serviceWorker' in navigator) {
   <button onclick="confirmClearHistoryMobile()" style="background:none;border:none;color:#ef4444;font-size:18px;cursor:pointer;padding:4px" title="Limpar dados">🗑️</button>
 </div>
   <div class="topbar-right">
-    <div class="realtime-badge"><div class="realtime-dot"></div>ao vivo</div><span class="badge-user" id="userBadge"></span>
+    <div class="realtime-badge"><div class="realtime-dot"></div>ao vivo</div><span class="badge-user" id="userBadge"></span><button onclick="logout()" style="background:none;border:none;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;margin-left:6px">⏻ Sair</button>
     <button class="btn-refresh" onclick="loadAll()">↻</button>
     <button class="btn-refresh" id="btnPush" onclick="togglePush()" title="Notificações">🔔</button>
   </div>
@@ -231,7 +231,13 @@ if ('serviceWorker' in navigator) {
 </div>
   <div id="viewMeta" style="display:none">
     <div id="metaAdsContent" style="padding:12px">
-      <div id="metaAdsLoading" style="text-align:center;padding:40px;color:#888">⏳ Carregando...</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    <div class="pill active" onclick="setMetaPeriod(this,'today')">Hoje</div>
+    <div class="pill" onclick="setMetaPeriod(this,'7d')">7 dias</div>
+    <div class="pill" onclick="setMetaPeriod(this,'30d')">30 dias</div>
+    <div class="pill" onclick="setMetaPeriod(this,'month')">Este mês</div>
+  </div>
+  <div id="metaAdsLoading" style="text-align:center;padding:40px;color:#888">⏳ Carregando...</div>
       <div id="metaAdsError" style="display:none;text-align:center;padding:40px;color:#ef4444"></div>
       <div id="metaAdsData" style="display:none">
         <div id="metaAccsList" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -286,7 +292,7 @@ function showApp(user){
   loadAll();
 }
 if(token){try{const u=JSON.parse(localStorage.getItem('pa_user')||'{}');showApp(u)}catch(e){localStorage.removeItem('pa_token')}}
-function setPeriod(el,p){document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));el.classList.add('active');currentPeriod=p;loadVendas()}
+function setPeriod(el,p){document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));el.classList.add('active');currentPeriod=p;loadVendas();const vm=document.getElementById('viewMeta');if(vm&&vm.style.display!=='none')loadMetaAdsMobile();}
 function setFilter(el,f){document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));el.classList.add('active');currentFilter=f;renderList()}
 function switchTab(tab){
   document.getElementById('viewVendas').style.display=tab==='vendas'?'block':'none';
@@ -422,6 +428,8 @@ function renderRanking(approved) {
     </div>`).join('');
 }
 setInterval(()=>loadVendas(), 30000);
+function setMetaPeriod(el,p){document.querySelectorAll('#viewMeta .pill').forEach(x=>x.classList.remove('active'));el.classList.add('active');currentPeriod=p;loadMetaAdsMobile();}
+function logout(){localStorage.clear();window.location.href="/";}
 
 // ── META ADS MOBILE ──
 async function loadMetaAdsMobile() {
@@ -429,8 +437,8 @@ async function loadMetaAdsMobile() {
   document.getElementById('metaAdsError').style.display='none';
   document.getElementById('metaAdsData').style.display='none';
   try {
-    const h = {'Authorization':'Bearer '+token};
-    const accsR = await fetch('/api/meta/accounts', {headers:h});
+    const h = {'Authorization':'Bearer '+(token||localStorage.getItem('pa_token'))}
+    const accsR = await fetch('/api/accounts', {headers:h});
     const accs = await accsR.json();
     if(!Array.isArray(accs)||!accs.length) {
       document.getElementById('metaAdsLoading').style.display='none';
@@ -438,10 +446,7 @@ async function loadMetaAdsMobile() {
       document.getElementById('metaAdsError').textContent='Nenhuma conta. Configure no desktop.';
       return;
     }
-    const now = new Date();
-    const fmt = d => d.toISOString().slice(0,10);
-    const since = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
-    const until = fmt(now);
+    const {from: since, to: until} = periodRange();
     const results = await Promise.all(accs.map(async acc => {
       try {
         const r = await fetch('/api/meta/'+acc.id+'/insights?since='+since+'&until='+until, {headers:h});
