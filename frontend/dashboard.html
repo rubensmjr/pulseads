@@ -982,6 +982,9 @@ function destroyChart(id) {
 //  PERIOD
 // ════════════════════════════════════════════════════
 document.querySelectorAll('.period-pill').forEach(btn => {
+    // Resetar título do gráfico quando trocar período
+    const titleEl=document.getElementById('chartLineTitle');
+    if(titleEl) titleEl.textContent='Evolução diária';
   btn.addEventListener('click', () => {
     document.querySelectorAll('.period-pill').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
@@ -1044,7 +1047,7 @@ async function connectAccount() {
     });
     const data = await result.json();
     if(!result.ok) throw new Error(data.error);
-    S.accounts.push({id:data.id, name:data.name, manager:data.manager||'', accId:data.account_id, color:data.color||S.color, currency:data.currency||'USD', status:'loading', insights:null, prevInsights:null, campaigns:null, adsets:null, dailyData:null, error:''});
+    S.accounts.push({id:data.id, name:data.name, manager:data.manager||'', accId:data.account_id, color:data.color||S.color, currency:data.currency||'USD', status:'loading', insights:null, prevInsights:null, campaigns:null, adsets:null, dailyData:null, hourlyData:null, error:''});
     if(S.active===null) S.active=0;
     closeModal(); updateManagerDL(); renderSidebar();
     await loadAccountData(S.accounts.length-1);
@@ -1321,7 +1324,7 @@ function renderSingleView(content, title, idx) {
     </div><div class="charts-row">
       <div class="chart-card">
         <div class="chart-header">
-          <div class="chart-title">Evolução diária</div>
+          <div class="chart-title" id="chartLineTitle">Evolução diária</div>
           <div class="chart-legend">
             <div class="legend-item"><div class="legend-dot" style="background:#4f8ef7"></div>Investimento</div>
             <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Cliques</div>
@@ -1489,6 +1492,95 @@ function buildLineChart(id, accs) {
         x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},maxTicksLimit:10}},
         y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},callback:v=>'R$'+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:0})}},
         ...(accs.length===1?{y2:{position:'right',grid:{display:false},ticks:{color:'#5a5a78',font:{size:10}}}}:{})
+      }
+    }
+  });
+}
+
+
+// ── Gráfico por hora (conta única) ────────────────────────────────────────
+function buildHourlyLineChart(id, acc) {
+  destroyChart(id);
+  const canvas=document.getElementById(id); if(!canvas)return;
+  const titleEl=document.getElementById('chartLineTitle');
+  if(titleEl) titleEl.textContent='Evolução por hora — Hoje';
+
+  const hours=Array.from({length:24},(_,i)=>i);
+  const hd=acc.hourlyData||{};
+  const spendData=hours.map(h=>parseFloat((hd[h]||{}).spend||0));
+  const clickData=hours.map(h=>parseInt((hd[h]||{}).clicks||0));
+  const nowH=new Date().getHours();
+  const labels=hours.map(h=>h+'h');
+
+  S.charts[id]=new Chart(canvas,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Investimento',data:spendData,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y',pointRadius:hours.map(h=>h<=nowH?3:0),pointHoverRadius:5},
+        {label:'Cliques',data:clickData,borderColor:'#34d399',backgroundColor:'transparent',tension:0.4,borderDash:[4,4],yAxisID:'y2',pointRadius:hours.map(h=>h<=nowH?3:0),pointHoverRadius:5}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1e2029',titleColor:'#f0f0f5',bodyColor:'#9a9ab0',
+          borderColor:'rgba(255,255,255,0.07)',borderWidth:1,padding:10,
+          callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fC(ctx.raw,acc.currency)}
+        },
+        annotation:{
+          annotations:{
+            nowLine:{type:'line',xMin:nowH,xMax:nowH,borderColor:'rgba(251,191,36,0.5)',borderWidth:1,borderDash:[4,4],
+              label:{content:'Agora',enabled:true,position:'start',color:'#fbbf24',font:{size:10}}}
+          }
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},maxTicksLimit:12}},
+        y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},callback:v=>fC(v,acc.currency)}},
+        y2:{position:'right',grid:{display:false},ticks:{color:'#5a5a78',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ── Gráfico por hora multi-conta ───────────────────────────────────────────
+function buildHourlyLineChartMulti(id, accs) {
+  destroyChart(id);
+  const canvas=document.getElementById(id); if(!canvas)return;
+  const titleEl=document.getElementById('chartLineTitle');
+  if(titleEl) titleEl.textContent='Investimento por hora — Hoje';
+
+  const hours=Array.from({length:24},(_,i)=>i);
+  const nowH=new Date().getHours();
+  const labels=hours.map(h=>h+'h');
+  const datasets=accs.map(acc=>({
+    label:acc.name,
+    data:hours.map(h=>parseFloat(((acc.hourlyData||{})[h]||{}).spend||0)),
+    borderColor:acc.color,backgroundColor:acc.color+'18',
+    tension:0.4,fill:false,
+    pointRadius:hours.map(h=>h<=nowH?2:0),pointHoverRadius:5
+  }));
+
+  S.charts[id]=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1e2029',titleColor:'#f0f0f5',bodyColor:'#9a9ab0',
+          borderColor:'rgba(255,255,255,0.07)',borderWidth:1,padding:10
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},maxTicksLimit:12}},
+        y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},callback:v=>fC(v,accs[0]?.currency)}}
       }
     }
   });
