@@ -1069,6 +1069,10 @@ async function loadAccountData(idx) {
     acc.campaigns=data.campaigns||[];
     acc.adsets=data.adsets||[];
     acc.dailyData=data.dailyData||[];
+      // Buscar dados por hora se período for Hoje
+      if(S.period==='today'){
+        try{ const hr=await backendFetch(`/meta/${acc.id}/insights/hourly`,{}); acc.hourlyData=hr.hourlyData||{}; }catch(e){ acc.hourlyData={}; }
+      } else { acc.hourlyData=null; }
     acc.prevInsights=data.prevInsights;
     acc.currency=data.currency||acc.currency||'USD';
     acc.status='ok';
