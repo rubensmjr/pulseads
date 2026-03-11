@@ -288,7 +288,7 @@ function showApp(user){
   document.getElementById('appBar').style.display='flex';
   document.getElementById('appMain').style.display='block';
   document.getElementById('appTabs').style.display='flex';
-  document.getElementById('userBadge').textContent=user?.name||'';
+  document.getElementById('userBadge').textContent=(user && user.name)||'';
   loadAll();
 }
 if(token){try{const u=JSON.parse(localStorage.getItem('pa_user')||'{}');showApp(u)}catch(e){localStorage.removeItem('pa_token')}}
@@ -895,8 +895,8 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
       const clicks= parseInt(ins.clicks||0);
       const ctr   = ins.ctr ? parseFloat(ins.ctr).toFixed(2)+'%' : (impr>0?(clicks/impr*100).toFixed(2)+'%':'0%');
       const cpc   = ins.cpc ? fC(ins.cpc, acc.currency||'USD') : '—';
-      const conv  = (ins.actions||[]).find(a=>a.action_type==='purchase')?.value||0;
-      const convVal=(ins.action_values||[]).find(a=>a.action_type==='purchase')?.value||0;
+      const conv  = ((ins.actions||[]).find(function(a){return a.action_type==='purchase';})||{}).value||0;
+      const convVal=((ins.action_values||[]).find(function(a){return a.action_type==='purchase';})||{}).value||0;
       const lucro = convVal - spend;
       const roi   = spend>0?((convVal-spend)/spend*100).toFixed(0)+'%':'—';
       const dot   = acc.status==='active'?'🟢':acc.status==='paused'?'🟡':'⚫';

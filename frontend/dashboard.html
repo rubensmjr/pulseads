@@ -515,6 +515,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .vendas-empty{text-align:center;padding:48px;color:var(--text3);font-size:13px}
 .vendas-footer{padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;justify-content:space-between}
 
+
+@media(max-width:768px){
+  body{font-size:13px}
+  .sidebar{display:none!important}
+  .topbar{padding:8px 12px!important;flex-wrap:wrap;gap:6px}
+  .topbar-right{flex-wrap:wrap;gap:4px}
+  .main-content{margin-left:0!important;padding:10px!important}
+  .view-tabs{overflow-x:auto;flex-wrap:nowrap!important}
+  .kpi-cards,.vendas-kpis{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .vkpi{padding:10px 12px!important}
+  .vkpi-value{font-size:18px!important}
+  .campaigns-grid{grid-template-columns:1fr!important}
+  .meta-kpis{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .accounts-panel{display:none!important}
+  .chart-row{grid-template-columns:1fr!important}
+  .vendas-table-wrap{overflow-x:auto}
+  .vendas-table th,.vendas-table td{padding:6px 8px!important;font-size:11px!important}
+  .topbar-actions{gap:4px}
+  .topbar-actions button{padding:4px 8px!important;font-size:11px!important}
+  .account-select-bar{display:none}
+  h2{font-size:16px!important}
+  .alert-bar{font-size:12px!important;padding:8px 12px!important}
+  .comparison-bar{flex-wrap:wrap;gap:4px}
+}
 </style>
 </head>
 <body>
