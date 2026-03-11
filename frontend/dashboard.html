@@ -1349,7 +1349,8 @@ function renderSingleView(content, title, idx) {
   </div>`;
 
   requestAnimationFrame(()=>{
-    buildLineChart('chartLine',[acc]);
+    if(S.period==='today') buildHourlyLineChart('chartLine',acc);
+    else buildLineChart('chartLine',[acc]);
     buildDonutChart('chartDonut',acc.campaigns||[]);
   });
 }
@@ -1398,7 +1399,8 @@ function renderAllView(content, title) {
   </div>`;
 
   requestAnimationFrame(()=>{
-    buildLineChart('chartLineAll',accs);
+    if(S.period==='today') buildHourlyLineChartMulti('chartLineAll',accs);
+    else buildLineChart('chartLineAll',accs);
     buildDonutAllChart('chartDonutAll',accs);
   });
 }
@@ -1453,7 +1455,8 @@ function renderManagerView(content, title, managerName) {
   </div>`;
 
   requestAnimationFrame(()=>{
-    buildLineChart('chartMgr',accs);
+    if(S.period==='today') buildHourlyLineChartMulti('chartMgr',accs);
+  else buildLineChart('chartMgr',accs);
     buildDonutAllChart('chartMgrDonut',accs);
   });
 }
@@ -1556,7 +1559,7 @@ function buildHourlyLineChartMulti(id, accs) {
   destroyChart(id);
   const canvas=document.getElementById(id); if(!canvas)return;
   const titleEl=document.getElementById('chartLineTitle');
-  if(titleEl) titleEl.textContent='Investimento por hora — Hoje';
+  if(titleEl) titleEl.textContent='Evolução por hora — Hoje';
 
   const hours=Array.from({length:24},(_,i)=>i);
   const nowH=new Date().getHours();

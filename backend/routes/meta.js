@@ -137,6 +137,44 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
 });
 
 
+
+// — GET /api/meta/:accountId/insights/hourly — dados por hora (hoje)
+router.get('/:accountId/insights/hourly', authMiddleware, async (req, res) => {
+  try {
+    const { acc, token } = await getAccountToken(req.params.accountId, req.user.id);
+    const today = new Date().toISOString().split('T')[0];
+    const tr = JSON.stringify({ since: today, until: today });
+
+    const data = await metaFetch(token, acc.account_id + '/insights', {
+      fields: 'spend,impressions,clicks,ctr,cpc',
+      time_range: tr,
+      breakdowns: 'hourly_stats_aggregated_by_advertiser_time_zone',
+      level: 'account',
+    });
+
+    // Montar objeto { 0: {spend,clicks,impressions}, ..., 23: {...} }
+    const hourlyData = {};
+    for (let h = 0; h < 24; h++) hourlyData[h] = { spend: 0, clicks: 0, impressions: 0 };
+
+    if (data && data.data) {
+      for (const row of data.data) {
+        const hStr = row.hourly_stats_aggregated_by_advertiser_time_zone || '';
+        const h = parseInt(hStr.split(':')[0], 10);
+        if (!isNaN(h) && h >= 0 && h < 24) {
+          hourlyData[h] = {
+            spend:       parseFloat(row.spend       || 0),
+            clicks:      parseInt(row.clicks        || 0),
+            impressions: parseInt(row.impressions   || 0),
+          };
+        }
+      }
+    }
+
+    res.json({ hourlyData });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+
+
 // Helper (moved here to avoid hoisting issues)
 function getAccountToken(accountId, userId) {
   const db = getDb();
