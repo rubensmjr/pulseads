@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+if (/Mobile|Android|iPhone|iPad|Tablet|iPod/i.test(navigator.userAgent)) {
+  window.location.replace('/dashboard-mobile.html');
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hotfy — Dashboard</title>
@@ -510,6 +515,30 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .vendas-empty{text-align:center;padding:48px;color:var(--text3);font-size:13px}
 .vendas-footer{padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;justify-content:space-between}
 
+
+@media(max-width:768px){
+  body{font-size:13px}
+  .sidebar{display:none!important}
+  .topbar{padding:8px 12px!important;flex-wrap:wrap;gap:6px}
+  .topbar-right{flex-wrap:wrap;gap:4px}
+  .main-content{margin-left:0!important;padding:10px!important}
+  .view-tabs{overflow-x:auto;flex-wrap:nowrap!important}
+  .kpi-cards,.vendas-kpis{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .vkpi{padding:10px 12px!important}
+  .vkpi-value{font-size:18px!important}
+  .campaigns-grid{grid-template-columns:1fr!important}
+  .meta-kpis{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .accounts-panel{display:none!important}
+  .chart-row{grid-template-columns:1fr!important}
+  .vendas-table-wrap{overflow-x:auto}
+  .vendas-table th,.vendas-table td{padding:6px 8px!important;font-size:11px!important}
+  .topbar-actions{gap:4px}
+  .topbar-actions button{padding:4px 8px!important;font-size:11px!important}
+  .account-select-bar{display:none}
+  h2{font-size:16px!important}
+  .alert-bar{font-size:12px!important;padding:8px 12px!important}
+  .comparison-bar{flex-wrap:wrap;gap:4px}
+}
 </style>
 </head>
 <body>
@@ -582,13 +611,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
       <div class="view-tabs" id="viewTabs">
         <button class="view-tab active" onclick="switchView('meta')" id="tab-meta">📊 Meta Ads</button>
         <button class="view-tab" onclick="switchView('vendas')" id="tab-vendas">🛒 Vendas</button>
-      </div>
+        <button class="view-tab" onclick="window.location.href='/funil.html'" id="tab-funil">🎯 Funil</button>
+      
+
+
+
+</div>
     <div class="topbar-right">
       <button class="alert-badge" onclick="openAlertsModal()" id="alertBtn" title="Alertas">
         ⚠️ Alertas
         <span class="alert-count" id="alertCount">0</span>
       </button>
-      <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-right:4px"></div>
+      <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-right:4px">
+
+</div>
+      <button onclick="confirmClearHistory()" style="background:none;border:1px solid rgba(239,68,68,.4);color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onmouseover="this.style.background='rgba(239,68,68,.1)'" onmouseout="this.style.background='none'">🗑️ Limpar</button>
       <button class="btn-icon btn-refresh" onclick="refreshCurrent()">↻ Atualizar</button>
       <button class="btn-icon" onclick="logout()" style="color:var(--text3)">⎋ Sair</button>
       <div class="preset-wrap" id="presetWrap">
@@ -1123,7 +1160,8 @@ function renderSingleView(content, title, idx) {
           purchases: ()=>kpi('🎯','Conversoes',fN(conv),'Leads: '+fN(leads),'green',delta(conv,prevConv),'Prev: '+fN(prevConv)),
           leads: ()=>kpi('📋','Leads',fN(leads),'Total de leads','green',delta(leads,prevLeads),'Prev: '+fN(prevLeads)),
             roi: ()=>kpi('💰','ROI',fCa(convValue-i.spend,acc),'Receita - Investimento',convValue-i.spend>=0?'green':'red',null,''),
-          roas: ()=>kpi('📈','ROAS',i.spend>0?((convValue/i.spend).toFixed(2)+'x'):'—','Retorno sobre gasto','green',null,''),
+          lucro: ()=>{ const pv=parseFloat((i.action_values||[]).find(a=>a.action_type==="purchase")?.value||0); const sp=parseFloat(i.spend||0); const l=pv-sp; const cur=getCurrency(acc); return kpi("💰","Lucro",fC(l,cur),"Receita de compras − Investimento",l>=0?"green":"red",null,""); },
+          roas: ()=>kpi('📈','ROI',i.spend>0?(((convValue-i.spend)/i.spend).toFixed(2)+'x'):'—','Retorno sobre gasto','green',null,''),
           ctr: ()=>kpi('🎯','CTR',fP(i.ctr),'Taxa de cliques','amber',delta(i.ctr,pi.ctr),fP(pi.ctr)),
           reach: ()=>kpi('👥','Alcance',fN(i.reach),'Pessoas unicas','blue',delta(i.reach,pi.reach),fN(pi.reach)),
           frequency: ()=>kpi('🔁','Frequencia',(+i.frequency||0).toFixed(2),'Impressoes por pessoa','amber',null,''),
@@ -1430,7 +1468,8 @@ const ALL_COLUMNS = {
   leads:      { label:'Leads',        group:'Conversões',  default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='lead')?.value) },
   cost_per_purchase:{ label:'CPR',    group:'Conversões',  default:false, fn:(i,cur)=>fC((i.cost_per_action_type||[]).find(a=>a.action_type==='purchase')?.value,cur) },
     roi:       { label:'ROI',          group:'Conversões',    default:false, fn:(i,cur)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return fC(v-s,cur);} },
-  roas:       { label:'ROAS',         group:'Conversões',  default:false, fn:(i)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return s>0?fD(v/s)+'x':'—';} },
+  lucro:        { label:'Lucro',         group:'Conversões',  default:true,  fn:(i,cur)=>{ const s=parseFloat(i.spend||0); const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0); const l=v-s; return (l>=0?'+':'')+fC(l,cur); } },
+  roas:       { label:'ROI',         group:'Conversões',  default:false, fn:(i)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return s>0?fD((v-s)/s)+'x':'—';} },
   // Alcance
   reach:      { label:'Alcance',      group:'Alcance',     default:false, fn:(i)=>fN(i.reach) },
   frequency:  { label:'Frequência',   group:'Alcance',     default:false, fn:(i)=>fD(i.frequency) },
@@ -2685,6 +2724,7 @@ async function loadVendas() {
 }
 
 function renderVendasKpis() {
+  if(typeof renderDesktopExtras === "function") { try { renderDesktopExtras(vendasData||[]); } catch(e){} }
   const purchases   = vendasData.filter(e => e.event_type === 'purchase');
   const refunds     = vendasData.filter(e => e.event_type === 'refunded');
   const chargebacks = vendasData.filter(e => e.event_type === 'chargeback');
@@ -2794,14 +2834,13 @@ function renderVendasTable() {
           <th>Plataforma</th>
           <th>Valor</th>
           <th>Status</th>
-          <th>País</th>
-          <th>Transação</th>
+          <th>País</th><th>Transação</th>
         </tr>
       </thead>
       <tbody>
         ${rows.map(e => `
           <tr>
-            <td style="color:var(--text3);white-space:nowrap">${fmtDate(e.created_at)}</td>
+            <td style="color:var(--text3);white-space:nowrap">${(function(s){if(!s)return"-";const d=new Date(s.replace(" ","T")+"Z");return d.toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})})(e.created_at)}</td>
             <td>
               <div style="font-weight:600;font-size:12px">${e.buyer_name||'—'}</div>
               <div style="font-size:11px;color:var(--text3)">${e.buyer_email||''}</div>
@@ -2810,8 +2849,8 @@ function renderVendasTable() {
             <td><span class="platform-badge">${platformIcon[e.platform]||'⚫'} ${e.platform}</span></td>
             <td style="font-family:'Inter',sans-serif;font-weight:700">${fmt(e.value, e.currency)}</td>
             <td>${badgeMap[e.event_type] || e.event_type}</td>
-            <td style="font-size:10px;color:var(--text3);font-family:monospace"><td>${e.country||"-"}</td>
-              <td>${e.transaction_id||'—'}</td>
+            <td>${e.country||"-"}</td>
+              <td style="font-size:10px;color:var(--text3);font-family:monospace">${e.transaction_id||'—'}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -2819,6 +2858,42 @@ function renderVendasTable() {
   `;
 }
 
+
+// ── META DIÁRIA + TAXAS + TOP PRODUTOS DESKTOP ──
+function renderDesktopExtras(events) {
+  if(!document.getElementById('dMetaBar')) return;
+  const aprovados  = events.filter(e => ['purchase'].includes(e.event_type));
+  const boletos    = events.filter(e => ['WAITING_PAYMENT','billet_printed','BILLET_PRINTED'].includes(e.event_type));
+  const reembolsos = events.filter(e => ['refund','refunded','PURCHASE_REFUNDED'].includes(e.event_type));
+  const total      = events.length || 1;
+  const META = 300;
+  const nA = aprovados.length;
+  const pct = Math.min(100, nA / META * 100);
+  document.getElementById('dMetaBar').style.width   = pct.toFixed(1) + '%';
+  document.getElementById('dMetaCount').textContent = nA + ' / ' + META;
+  document.getElementById('dMetaPct').textContent   = pct.toFixed(0) + '%';
+  document.getElementById('dMetaFaltam').textContent = (META - nA) > 0 ? 'Faltam ' + (META - nA) + ' vendas para bater a meta' : '🎉 Meta batida!';
+  document.getElementById('dTaxaAprov').textContent  = (aprovados.length  / total * 100).toFixed(0) + '%';
+  document.getElementById('dTaxaBoleto').textContent = (boletos.length     / total * 100).toFixed(0) + '%';
+  document.getElementById('dTaxaReemb').textContent  = (reembolsos.length  / total * 100).toFixed(0) + '%';
+  const prodMap = {};
+  aprovados.forEach(e => {
+    const n = e.product_name || e.product || 'Produto';
+    if(!prodMap[n]) prodMap[n] = {n:0, rev:0};
+    prodMap[n].n++; prodMap[n].rev += (e.value||0);
+  });
+  const sorted = Object.entries(prodMap).sort((a,b)=>b[1].n-a[1].n).slice(0,5);
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  document.getElementById('dTopProdutos').innerHTML = sorted.length
+    ? sorted.map(([nome,d],i) =>
+        '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">' +
+        '<span>' + medals[i] + '</span>' +
+        '<span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + nome + '</span>' +
+        '<span style="font-size:11px;color:#7c6aff;font-weight:700">' + d.n + 'x</span>' +
+        '<span style="font-size:11px;color:#22d3a0;font-weight:700;margin-left:6px">US$ ' + d.rev.toFixed(0) + '</span></div>'
+      ).join('')
+    : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px">Sem dados</div>';
+}
 </script>
 
 
@@ -2846,7 +2921,47 @@ function renderVendasTable() {
         <input type="text" class="table-search" id="vendasSearch" placeholder="🔍 Buscar comprador..." oninput="renderVendasTable()" style="margin-left:auto;width:200px">
       </div>
       <div class="vendas-table-wrap">
-        <div class="vendas-table-header">
+        
+<!-- META DIÁRIA -->
+<div id="desktopMeta" style="margin:0 24px 16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">🎯 Meta diária</span>
+    <span id="dMetaCount" style="font-size:13px;font-weight:700;color:var(--accent)">—</span>
+    <span id="dMetaPct" style="font-size:12px;color:var(--text2)">—%</span>
+  </div>
+  <div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden">
+    <div id="dMetaBar" style="height:100%;width:0%;background:linear-gradient(90deg,#7c6aff,#22d3a0);border-radius:4px;transition:width 1s ease"></div>
+  </div>
+  <div id="dMetaFaltam" style="font-size:11px;color:var(--text3);margin-top:6px"></div>
+</div>
+
+<!-- TAXAS + TOP PRODUTOS -->
+<div id="desktopTaxas" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 24px 16px">
+  <!-- Taxas de conversão -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px">📊 Taxas de conversão</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+      <div style="background:var(--bg);border-radius:10px;padding:12px">
+        <div id="dTaxaAprov" style="font-size:22px;font-weight:800;color:#22d3a0">—</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:4px">Aprovação</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px">
+        <div id="dTaxaBoleto" style="font-size:22px;font-weight:800;color:#f59e0b">—</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:4px">Boleto</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px">
+        <div id="dTaxaReemb" style="font-size:22px;font-weight:800;color:#ef4444">—</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-top:4px">Reembolso</div>
+      </div>
+    </div>
+  </div>
+  <!-- Top Produtos -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px">🏆 Top Produtos</div>
+    <div id="dTopProdutos" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+</div>
+<div class="vendas-table-header">
           <span class="vendas-table-title">Transações</span>
           <span id="vendasCount" style="font-size:11px;color:var(--text3)"></span>
         </div>

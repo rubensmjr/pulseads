@@ -185,6 +185,45 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 ══════════════════════════════════════════ */
 .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
 
+
+/* ── Table Tabs ─────────────────────────────── */
+.table-tabs-wrap { margin-bottom: 16px; }
+.table-tabs-nav {
+  display: flex; align-items: center; gap: 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 0;
+}
+.table-tab-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 10px 18px; font-size: 12px; font-weight: 600;
+  color: var(--text3); letter-spacing: 0.5px;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color var(--transition), border-color var(--transition);
+  display: flex; align-items: center; gap: 6px;
+}
+.table-tab-btn:hover { color: var(--text); }
+.table-tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+.table-tab-btn .tab-count {
+  background: rgba(255,255,255,0.06); border-radius: 10px;
+  padding: 1px 7px; font-size: 10px; font-weight: 700;
+}
+.table-tab-btn.active .tab-count { background: var(--blue-glow); color: var(--blue); }
+.table-tab-pane { display: none; }
+.table-tab-pane.active { display: block; }
+
+/* criativos thumb */
+.ad-thumb {
+  width: 32px; height: 32px; border-radius: 6px;
+  object-fit: cover; background: rgba(255,255,255,0.05);
+  vertical-align: middle;
+}
+.ad-thumb-placeholder {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; vertical-align: middle;
+}
+
 /* topbar */
 .topbar{
   height:var(--topbar-h);background:rgba(14,15,20,0.85);backdrop-filter:blur(16px);
@@ -1068,6 +1107,7 @@ async function loadAccountData(idx) {
     acc.insights=data.insights;
     acc.campaigns=data.campaigns||[];
     acc.adsets=data.adsets||[];
+    acc.ads=data.ads||[];
     acc.dailyData=data.dailyData||[];
       // Buscar dados por hora se período for Hoje
       if(S.period==='today'){
@@ -1344,8 +1384,7 @@ function renderSingleView(content, title, idx) {
         </div>
       </div>
     </div>
-    ${campaignsTable(acc.campaigns,'camp_'+idx,acc.currency,idx)}
-    ${adsetsTable(acc.adsets,'adset_'+idx,acc.currency,idx)}
+    ${tabsTable(acc.campaigns,acc.adsets,acc.ads||[],'tbl_'+idx,acc.currency,idx)}
   </div>`;
 
   requestAnimationFrame(()=>{
@@ -1880,16 +1919,8 @@ function refreshTables() {
   // Re-render main view without full reload
   const acc = S.accounts[typeof S.active === 'number' ? S.active : 0];
   if (!acc) return;
-  const campEl = document.querySelector('[id^="tbl_camp_"]');
-  const adsetEl = document.querySelector('[id^="tbl_adset_"]');
-  if (campEl) {
-    const wrap = campEl.closest('.table-card');
-    if (wrap) wrap.outerHTML = campaignsTable(acc.campaigns, 'camp_0', acc.currency, typeof S.active === 'number' ? S.active : 0);
-  }
-  if (adsetEl) {
-    const wrap = adsetEl.closest('.table-card');
-    if (wrap) wrap.outerHTML = adsetsTable(acc.adsets, 'adset_0', acc.currency, typeof S.active === 'number' ? S.active : 0);
-  }
+  const tabsWrap = document.querySelector('[id^="tabs-wrap-"]');
+  if (tabsWrap) tabsWrap.outerHTML = tabsTable(acc.campaigns, acc.adsets, acc.ads||[], 'tbl_'+(typeof S.active === 'number' ? S.active : 0), acc.currency, typeof S.active === 'number' ? S.active : 0);
   renderMain();
 }
 
@@ -1929,6 +1960,90 @@ function renderColVal(key, i, currency) {
   const col = ALL_COLUMNS[key];
   if (!col) return '—';
   try { return col.fn(i, currency) || '—'; } catch(e) { return '—'; }
+}
+
+
+// ── TABS: Campanhas | Conjuntos | Criativos ─────────────────────────
+function switchTab(wrapId, tab) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  wrap.querySelectorAll('.table-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  wrap.querySelectorAll('.table-tab-pane').forEach(p => p.classList.toggle('active', p.dataset.tab===tab));
+}
+
+function tabsTable(campaigns, adsets, ads, tableId, currency, accIdx) {
+  const nc = (campaigns||[]).length;
+  const ns = (adsets||[]).length;
+  const na = (ads||[]).length;
+  const wrapId = 'tabs-wrap-'+tableId;
+  return `<div class="table-tabs-wrap" id="${wrapId}">
+    <div class="table-tabs-nav">
+      <button class="table-tab-btn active" data-tab="camp" onclick="switchTab('${wrapId}','camp')">
+        📋 Campanhas <span class="tab-count">${nc}</span>
+      </button>
+      <button class="table-tab-btn" data-tab="adset" onclick="switchTab('${wrapId}','adset')">
+        🎯 Conjuntos <span class="tab-count">${ns}</span>
+      </button>
+      <button class="table-tab-btn" data-tab="ads" onclick="switchTab('${wrapId}','ads')">
+        🖼 Criativos <span class="tab-count">${na}</span>
+      </button>
+    </div>
+    <div class="table-tab-pane active" data-tab="camp">
+      ${campaignsTable(campaigns, 'camp_'+tableId, currency, accIdx)}
+    </div>
+    <div class="table-tab-pane" data-tab="adset">
+      ${adsetsTable(adsets, 'adset_'+tableId, currency, accIdx)}
+    </div>
+    <div class="table-tab-pane" data-tab="ads">
+      ${adsCreativosTable(ads, 'ads_'+tableId, currency, accIdx)}
+    </div>
+  </div>`;
+}
+
+function adsCreativosTable(ads, tableId, currency, accIdx) {
+  if (!ads||!ads.length) return `<div class="table-card" style="margin-bottom:16px"><div class="table-header"><div class="table-title">Criativos</div></div><div class="loading-block">Sem criativos no período.</div></div>`;
+  const rows = ads.map(a => {
+    const i = (a.insights&&a.insights.data&&a.insights.data[0])||{};
+    const sc = a.status==='ACTIVE'?'active':a.status==='PAUSED'?'paused':'inactive';
+    const sl = a.status==='ACTIVE'?'Ativo':a.status==='PAUSED'?'Pausado':a.status;
+    const spend = parseFloat(i.spend||0);
+    const impr  = parseInt(i.impressions||0);
+    const clicks= parseInt(i.clicks||0);
+    const ctr   = parseFloat(i.ctr||0);
+    const cpc   = parseFloat(i.cpc||0);
+    const conv  = parseInt((i.actions||[]).find(x=>x.action_type==='purchase')?.value||0);
+    const thumb = a.creative&&a.creative.thumbnail_url;
+    const thumbHtml = thumb
+      ? `<img class="ad-thumb" src="${thumb}" onerror="this.style.display='none'">`
+      : `<span class="ad-thumb-placeholder">🖼</span>`;
+    return `<tr>
+      <td class="td-name" title="${esc(a.name)}">${thumbHtml} ${esc(a.name)}</td>
+      <td><span class="pill ${sc}">${sl}</span></td>
+      <td class="num">${fC(spend,currency)}</td>
+      <td class="num">${fN(impr)}</td>
+      <td class="num">${fN(clicks)}</td>
+      <td class="num">${fP(ctr)}</td>
+      <td class="num">${fC(cpc,currency)}</td>
+      <td class="num">${fN(conv)}</td>
+    </tr>`;
+  }).join('');
+  const colHeaders = ACTIVE_COLS.map(key=>`<th>${ALL_COLUMNS[key]?.label||key}</th>`).join('');
+  return `<div class="table-card" style="margin-bottom:0">
+    <div class="table-header">
+      <div class="table-title">Criativos</div>
+      <div class="table-controls">
+        <input class="table-search" placeholder="Buscar..." oninput="filterTable(this,'tbl_ads_${tableId}')" />
+        <span class="table-count">${ads.length}</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="tbl_ads_${tableId}">
+        <thead><tr><th>Criativo</th><th>Status</th><th>Invest.</th><th>Impressões</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Compras</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="table-footer-row"><span>${ads.length} criativos</span><span>Meta API v19.0</span></div>
+  </div>`;
 }
 
 function campaignsTable(camps, tableId, currency, accIdx) {

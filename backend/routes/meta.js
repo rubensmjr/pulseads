@@ -92,7 +92,7 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
     const { since, until } = req.query;
     const tr = JSON.stringify({ since, until });
 
-    const [insRes, campRes, adsetRes, dailyRes, prevRes] = await Promise.allSettled([
+    const [insRes, campRes, adsetRes, adsRes, dailyRes, prevRes] = await Promise.allSettled([
       metaFetch(token, acc.account_id + '/insights', {
         fields: 'impressions,clicks,spend,reach,cpm,cpc,ctr,actions,action_values',
         time_range: tr, level: 'account',
@@ -105,6 +105,10 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
         fields: `name,status,daily_budget,insights.time_range(${tr}){spend,impressions,clicks,ctr,cpc,frequency,reach}`,
         limit: 50,
       }),
+    metaFetch(token, acc.account_id + '/ads', {
+      fields: `name,status,creative{thumbnail_url},insights.time_range(${tr}){spend,impressions,clicks,ctr,cpc,actions,action_values,cost_per_action_type}`,
+      limit: 100,
+    }),
       metaFetch(token, acc.account_id + '/insights', {
         fields: 'spend,impressions,clicks,ctr,cpc',
         time_range: tr, time_increment: 1, level: 'account',
@@ -130,6 +134,7 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
       insights: insRes.status==='fulfilled' ? insRes.value.data?.[0]||null : null,
       campaigns: campRes.status==='fulfilled' ? campRes.value.data||[] : [],
       adsets: adsetRes.status==='fulfilled' ? adsetRes.value.data||[] : [],
+      ads: adsRes.status==='fulfilled' ? adsRes.value.data||[] : [],
       dailyData: dailyRes.status==='fulfilled' ? dailyRes.value.data||[] : [],
       prevInsights: prevRes.status==='fulfilled' ? prevRes.value.data?.[0]||null : null,
     });
