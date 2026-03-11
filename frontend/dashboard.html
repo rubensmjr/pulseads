@@ -539,6 +539,153 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   .alert-bar{font-size:12px!important;padding:8px 12px!important}
   .comparison-bar{flex-wrap:wrap;gap:4px}
 }
+
+/* ═══════════════════════════════════════════
+   UI/UX MELHORIAS VISUAIS — PulseAds v2
+   ═══════════════════════════════════════════ */
+
+/* Animação de entrada dos cards KPI */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+@keyframes spinBtn {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton loader para KPI cards */
+.kpi-skeleton {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  height: 110px;
+  overflow: hidden;
+  position: relative;
+}
+.kpi-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.04) 40%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 60%,
+    transparent 100%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+.kpi-skeleton-line {
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.06);
+  margin-bottom: 10px;
+}
+.kpi-skeleton-line.wide  { width: 60%; }
+.kpi-skeleton-line.value { width: 45%; height: 22px; margin-top: 14px; }
+.kpi-skeleton-line.sub   { width: 35%; height: 8px; }
+
+/* Borda accent no topo dos KPI cards */
+.kpi-card {
+  border-top: 2px solid transparent !important;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition) !important;
+  animation: fadeSlideUp 0.35s ease both;
+}
+.kpi-card.blue   { border-top-color: var(--blue) !important; }
+.kpi-card.green  { border-top-color: var(--green) !important; }
+.kpi-card.amber  { border-top-color: var(--amber) !important; }
+.kpi-card.red    { border-top-color: var(--red) !important; }
+.kpi-card.purple { border-top-color: var(--purple) !important; }
+
+/* Animação escalonada nos cards */
+.kpi-card:nth-child(1) { animation-delay: 0.00s; }
+.kpi-card:nth-child(2) { animation-delay: 0.04s; }
+.kpi-card:nth-child(3) { animation-delay: 0.08s; }
+.kpi-card:nth-child(4) { animation-delay: 0.12s; }
+.kpi-card:nth-child(5) { animation-delay: 0.16s; }
+.kpi-card:nth-child(6) { animation-delay: 0.20s; }
+.kpi-card:nth-child(7) { animation-delay: 0.24s; }
+.kpi-card:nth-child(8) { animation-delay: 0.28s; }
+
+/* Lucro negativo — destaque vermelho forte */
+.kpi-value.negative {
+  color: var(--red) !important;
+}
+.kpi-card.red .kpi-value {
+  color: var(--red) !important;
+}
+
+/* Botão Atualizar — spinner quando loading */
+.btn-refresh.refreshing .refresh-icon {
+  display: inline-block;
+  animation: spinBtn 0.7s linear infinite;
+}
+.btn-refresh.refreshing {
+  opacity: 0.7;
+  pointer-events: none;
+  cursor: wait;
+}
+
+/* Toast notification system */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  pointer-events: all;
+  max-width: 320px;
+  animation: fadeSlideUp 0.25s ease both;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.toast.success { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.3); }
+.toast.error   { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.3); }
+.toast.info    { background: rgba(79,142,247,0.12);  border-color: rgba(79,142,247,0.3); }
+.toast.warning { background: rgba(251,191,36,0.12);  border-color: rgba(251,191,36,0.3); }
+.toast-icon    { font-size: 15px; flex-shrink: 0; }
+.toast-close   { margin-left: auto; cursor: pointer; opacity: 0.5; font-size: 16px; line-height: 1; flex-shrink: 0; }
+.toast-close:hover { opacity: 1; }
+.toast.hiding  { opacity: 0; transform: translateX(20px); }
+
+/* Banner de alerta — mais elegante */
+.alerts-panel {
+  border-radius: var(--radius) !important;
+  border: 1px solid rgba(251,191,36,0.25) !important;
+  background: rgba(251,191,36,0.06) !important;
+}
+
+/* Estado vazio — melhorado */
+.empty-state {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  margin: 8px 0;
+}
+
+/* Hover cursor pointer em todos os cards clicáveis */
+.kpi-card, .vkpi, .table-row { cursor: default; }
+.acc-item, .period-pill, .btn-icon, .btn-primary, .btn-secondary { cursor: pointer; }
+
 </style>
 </head>
 <body>
@@ -626,7 +773,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 </div>
       <button onclick="confirmClearHistory()" style="background:none;border:1px solid rgba(239,68,68,.4);color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onmouseover="this.style.background='rgba(239,68,68,.1)'" onmouseout="this.style.background='none'">🗑️ Limpar</button>
-      <button class="btn-icon btn-refresh" onclick="refreshCurrent()">↻ Atualizar</button>
+      <button class="btn-icon btn-refresh" onclick="refreshWithFeedback(this)"><span class="refresh-icon">↻</span> Atualizar</button>
       <button class="btn-icon" onclick="logout()" style="color:var(--text3)">⎋ Sair</button>
       <div class="preset-wrap" id="presetWrap">
         <button class="btn-icon btn-preset" onclick="togglePresetMenu(event)" id="presetBtn">
@@ -2973,5 +3120,82 @@ function renderDesktopExtras(events) {
       </div>
     </div>
   </div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+// ── Toast system ─────────────────────────────────────
+function showToast(msg, type, duration) {
+  type = type || 'info';
+  duration = duration || 3000;
+  var c = document.getElementById('toast-container');
+  if (!c) return;
+  var icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = '<span class="toast-icon">' + (icons[type]||'💬') + '</span><span>' + msg + '</span><span class="toast-close" onclick="dismissToast(this.parentElement)">×</span>';
+  c.appendChild(t);
+  setTimeout(function() { dismissToast(t); }, duration);
+}
+function dismissToast(el) {
+  if (!el) return;
+  el.classList.add('hiding');
+  setTimeout(function() { if (el.parentElement) el.parentElement.removeChild(el); }, 320);
+}
+
+// ── Refresh com spinner + toast ───────────────────────
+function refreshWithFeedback(btn) {
+  btn.classList.add('refreshing');
+  var done = function() {
+    btn.classList.remove('refreshing');
+    showToast('Dados atualizados!', 'success', 2500);
+  };
+  // Chama o refresh original e aguarda
+  try {
+    var p = refreshCurrent();
+    if (p && typeof p.then === 'function') {
+      p.then(done).catch(function() {
+        btn.classList.remove('refreshing');
+        showToast('Erro ao atualizar dados.', 'error');
+      });
+    } else {
+      setTimeout(done, 1200);
+    }
+  } catch(e) {
+    btn.classList.remove('refreshing');
+    showToast('Erro ao atualizar.', 'error');
+  }
+}
+
+// ── Highlight valor negativo automaticamente ──────────
+function highlightNegativeKpis() {
+  var vals = document.querySelectorAll('.kpi-value');
+  vals.forEach(function(el) {
+    var txt = el.textContent.trim();
+    var hasNeg = txt.indexOf('-') === 0 || txt.indexOf('€ -') === 0 || txt.indexOf('R$ -') === 0;
+    if (hasNeg) {
+      el.classList.add('negative');
+    } else {
+      el.classList.remove('negative');
+    }
+  });
+}
+
+// Rodar highlight após cada atualização
+var _origRefresh = typeof refreshCurrent === 'function' ? refreshCurrent : null;
+if (_origRefresh) {
+  refreshCurrent = function() {
+    var r = _origRefresh.apply(this, arguments);
+    setTimeout(highlightNegativeKpis, 800);
+    return r;
+  };
+}
+// Rodar na primeira carga
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(highlightNegativeKpis, 1000);
+});
+</script>
+
 </body>
 </html>
