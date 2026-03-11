@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hotfy — Escale seus anúncios com inteligência</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #4f8ef7;
+  --primary-dark: #2563eb;
+  --primary-light: #93c5fd;
+  --accent: #34d399;
+  --accent-dark: #059669;
+  --bg: #ffffff;
+  --bg2: #f8fafc;
+  --bg3: #f1f5f9;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --text4: #94a3b8;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06);
+  --grid-color: rgba(79,142,247,0.06);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+.container { max-width: 1180px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
+
+/* NAVBAR */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  height: 68px; display: flex; align-items: center;
+}
+.nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.nav-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 22px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.5px;
+}
+.logo-dot {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.nav-links { display: flex; align-items: center; gap: 4px; list-style: none; }
+.nav-links a {
+  text-decoration: none; color: var(--text3); font-size: 15px; font-weight: 500;
+  padding: 6px 14px; border-radius: 8px; transition: all 0.15s;
+}
+.nav-links a:hover { color: var(--text); background: var(--bg3); }
+.nav-cta { background: var(--text) !important; color: #fff !important; padding: 8px 20px !important; border-radius: 50px !important; font-weight: 600 !important; }
+.nav-cta:hover { background: var(--primary) !important; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,142,247,0.35) !important; }
+
+/* HERO */
+.hero { padding: 100px 0 80px; position: relative; overflow: hidden; }
+.hero-glow { position: absolute; top: -100px; right: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(79,142,247,0.12) 0%, transparent 70%); pointer-events: none; }
+.hero-glow2 { position: absolute; bottom: -50px; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(52,211,153,0.10) 0%, transparent 70%); pointer-events: none; }
+.hero-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 50px; padding: 6px 16px 6px 8px;
+  font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 28px;
+}
+.badge-avatars { display: flex; }
+.badge-avatars span {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--bg);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  margin-left: -6px; font-size: 10px; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700;
+}
+.badge-avatars span:first-child { margin-left: 0; }
+h1 { font-size: 64px; font-weight: 700; line-height: 1.05; letter-spacing: -2px; color: var(--text); margin-bottom: 24px; }
+h1 .hl { color: var(--primary); }
+.hero-sub { font-size: 18px; color: var(--text3); line-height: 1.7; margin-bottom: 40px; max-width: 480px; }
+.hero-actions { display: flex; align-items: center; gap: 16px; margin-bottom: 48px; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--primary); color: #fff;
+  font-size: 16px; font-weight: 600; padding: 14px 28px;
+  border-radius: 50px; text-decoration: none; border: none; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 4px 20px rgba(79,142,247,0.35); font-family: inherit;
+}
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(79,142,247,0.45); }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; color: var(--text2); font-size: 16px; font-weight: 500;
+  padding: 14px 20px; border-radius: 50px; text-decoration: none;
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.btn-secondary:hover { background: var(--bg3); color: var(--text); }
+.hero-feats { display: flex; gap: 24px; flex-wrap: wrap; }
+.hero-feat { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--text3); }
+.feat-icon { width: 28px; height: 28px; background: var(--bg3); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+/* DASHBOARD MOCKUP */
+.hero-visual { position: relative; }
+.dash-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-lg); position: relative; z-index: 2; }
+.dash-bar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 18px; display: flex; align-items: center; gap: 10px; }
+.dash-dots { display: flex; gap: 5px; }
+.dash-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.dash-dots span:nth-child(1){background:#fc615d} .dash-dots span:nth-child(2){background:#fdbc40} .dash-dots span:nth-child(3){background:#34c749}
+.dash-title { font-size: 12px; font-weight: 600; color: var(--text3); flex: 1; text-align: center; letter-spacing: 0.3px; }
+.dash-body { padding: 18px; }
+.dash-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.dash-kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.dash-kpi-lbl { font-size: 10px; color: var(--text4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.dash-kpi-val { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+.dash-kpi-val.blue { color: var(--primary); }
+.dash-kpi-val.green { color: var(--accent-dark); }
+.dash-chart { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.dash-chart-lbl { font-size: 10px; color: var(--text4); margin-bottom: 8px; }
+.chart-svg { width: 100%; height: 80px; }
+.chart-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 2s ease 0.5s forwards; }
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+.float-card { position: absolute; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; box-shadow: var(--shadow-lg); z-index: 3; }
+.float-card.tr { top: -14px; right: -14px; min-width: 150px; }
+.float-card.bl { bottom: 16px; left: -16px; min-width: 140px; }
+.float-lbl { font-size: 10px; color: var(--text4); }
+.float-val { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+.float-badge { display: inline-block; background: rgba(52,211,153,0.15); color: var(--accent-dark); border-radius: 50px; font-size: 11px; font-weight: 600; padding: 2px 8px; margin-top: 2px; }
+.float-badge.red { background: rgba(248,113,113,0.12); color: #dc2626; }
+
+/* DIVIDERS */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); position: relative; z-index: 1; }
+.diag { height: 32px; background: repeating-linear-gradient(-45deg, transparent, transparent 4px, var(--border) 4px, var(--border) 5px); opacity: 0.5; position: relative; z-index: 1; }
+
+/* SECTIONS */
+section { padding: 80px 0; position: relative; }
+.tag { display: inline-block; background: rgba(79,142,247,0.10); color: var(--primary); border: 1px solid rgba(79,142,247,0.20); border-radius: 50px; font-size: 13px; font-weight: 600; padding: 4px 14px; margin-bottom: 16px; }
+h2 { font-size: 44px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+h2 .hl { color: var(--primary); }
+.sub { font-size: 17px; color: var(--text3); max-width: 560px; line-height: 1.7; }
+
+/* FEATURES */
+.feat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 48px; }
+.feat-cell { background: var(--bg); padding: 32px 24px; transition: background 0.15s; }
+.feat-cell:hover { background: var(--bg2); }
+.feat-cell-icon { width: 42px; height: 42px; background: var(--bg3); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; border-left: 3px solid var(--primary); }
+.feat-cell h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.feat-cell p { font-size: 14px; color: var(--text3); line-height: 1.55; }
+
+/* PRICING */
+.pricing-wrap { display: flex; gap: 60px; align-items: flex-start; }
+.pricing-tbl { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); min-width: 380px; flex-shrink: 0; }
+.p-row { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 14px 22px; border-bottom: 1px solid var(--border); align-items: center; }
+.p-row:last-child { border: none; }
+.p-row.hdr { background: var(--bg2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text4); }
+.p-val { font-size: 15px; font-weight: 600; color: var(--text); }
+.p-val.green { color: var(--accent-dark); }
+.pill-hotfy { font-size: 12px; background: rgba(79,142,247,0.10); color: var(--primary); border-radius: 6px; padding: 3px 10px; font-weight: 600; display: inline-block; }
+
+/* INTEGRATIONS */
+.int-pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 40px 0 32px; }
+.int-pill { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 50px; padding: 10px 18px; font-size: 14px; font-weight: 500; color: var(--text2); box-shadow: var(--shadow); transition: all 0.2s; cursor: default; }
+.int-pill:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+.int-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.int-card { background: var(--bg); padding: 32px 32px 28px; }
+.int-preview { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; min-height: 130px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.int-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.int-card p { font-size: 14px; color: var(--text3); line-height: 1.6; margin-bottom: 14px; }
+.int-link { color: var(--primary); font-size: 15px; font-weight: 600; text-decoration: none; }
+.int-link:hover { color: var(--primary-dark); }
+
+/* SUITE */
+.suite-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.suite-feats { display: flex; flex-direction: column; gap: 22px; margin-top: 36px; }
+.suite-feat { display: flex; gap: 14px; align-items: flex-start; }
+.sf-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.suite-feat h4 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+.suite-feat p { font-size: 13px; color: var(--text3); line-height: 1.5; }
+.acc-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: var(--shadow-lg); }
+.acc-row { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; display: flex; justify-content: space-between; align-items: center; }
+.acc-avatar { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; }
+.acc-name { font-size: 14px; font-weight: 600; }
+.acc-sub { font-size: 11px; color: var(--text4); }
+.acc-val { font-size: 16px; font-weight: 700; text-align: right; }
+.acc-delta { font-size: 11px; font-weight: 500; }
+.green-d { color: #059669; }
+.red-d { color: #dc2626; }
+.gray-d { color: var(--text4); }
+
+/* TESTIMONIALS */
+.testi-track { display: flex; gap: 14px; overflow: hidden; margin-top: 40px; position: relative; }
+.testi-track::after { content:''; position: absolute; right: 0; top: 0; bottom: 0; width: 180px; background: linear-gradient(to right, transparent, var(--bg)); pointer-events: none; z-index: 2; }
+.testi-scroll { display: flex; gap: 14px; animation: scroll-t 30s linear infinite; flex-shrink: 0; }
+@keyframes scroll-t { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.testi-track:hover .testi-scroll { animation-play-state: paused; }
+.testi-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; min-width: 290px; max-width: 290px; flex-shrink: 0; box-shadow: var(--shadow); }
+.testi-name { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.testi-v { width: 15px; height: 15px; background: var(--primary); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; color: #fff; }
+.testi-handle { font-size: 12px; color: var(--text4); margin-bottom: 12px; margin-top: 2px; }
+.testi-text { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+/* FAQ */
+.faq-wrap { max-width: 720px; margin: 0 auto; text-align: center; }
+.faq-wrap .sub { margin: 0 auto 40px; }
+.faq-list { text-align: left; display: flex; flex-direction: column; gap: 8px; }
+.faq-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.faq-q { width: 100%; background: none; border: none; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text); text-align: left; font-family: 'DM Sans', sans-serif; gap: 14px; }
+.faq-icon { width: 24px; height: 24px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: transform 0.2s; color: var(--text3); }
+.faq-item.open .faq-icon { transform: rotate(45deg); color: var(--primary); }
+.faq-a { display: none; padding: 0 22px 18px; font-size: 14px; color: var(--text3); line-height: 1.7; border-top: 1px solid var(--border); padding-top: 14px; }
+.faq-item.open .faq-a { display: block; }
+
+/* FINAL CTA */
+.cta-section { padding: 100px 0; text-align: center; position: relative; overflow: hidden; }
+.cta-glow { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 800px; height: 400px; background: radial-gradient(ellipse, rgba(79,142,247,0.10) 0%, transparent 70%); pointer-events: none; }
+.cta-section h2 { font-size: 50px; letter-spacing: -2px; margin-bottom: 16px; }
+.cta-section p { font-size: 18px; color: var(--text3); margin-bottom: 36px; }
+.cta-eyebrow { font-size: 12px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+
+/* FOOTER */
+footer { background: var(--text); color: rgba(255,255,255,0.5); padding: 56px 0 28px; position: relative; z-index: 1; }
+.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 44px; margin-bottom: 44px; }
+.footer-logo { color: #fff; margin-bottom: 10px; }
+.footer-desc { font-size: 13px; line-height: 1.6; margin-bottom: 0; }
+footer h5 { font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+footer ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+footer a { text-decoration: none; color: rgba(255,255,255,0.5); font-size: 14px; transition: color 0.15s; }
+footer a:hover { color: #fff; }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 22px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+
+/* ANIMATIONS */
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+.au { animation: fadeUp 0.6s ease forwards; opacity: 0; }
+.d1{animation-delay:0.05s} .d2{animation-delay:0.15s} .d3{animation-delay:0.28s} .d4{animation-delay:0.42s}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .hero-inner,.suite-wrap,.pricing-wrap{grid-template-columns:1fr}
+  .hero-visual{display:none}
+  h1{font-size:40px}
+  h2{font-size:30px}
+  .feat-grid{grid-template-columns:1fr 1fr}
+  .int-cards,.footer-grid{grid-template-columns:1fr}
+  .container{padding:0 20px}
+  .pricing-tbl{min-width:unset;width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="logo-dot">&#9889;</div>
+        Hotfy
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#pricing">Precos</a></li>
+        <li><a href="https://hotfy.digital/dashboard">Dashboard</a></li>
+        <li><a href="https://hotfy.digital/dashboard" class="nav-cta">Comecar agora</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="container">
+    <div class="hero-inner">
+
+      <div>
+        <div class="hero-badge au d1">
+          <div class="badge-avatars">
+            <span>M</span><span>R</span><span>A</span>
+          </div>
+          Escolhido por +1.000 gestores
+        </div>
+
+        <h1 class="au d2">
+          Anuncie<br>
+          <span class="hl">inteligente.</span><br>
+          Escale rapido.
+        </h1>
+
+        <p class="hero-sub au d3">
+          Dashboard de gestao de campanhas Meta Ads em tempo real.
+          Feito para gestores, afiliados e agencias que vivem de resultados.
+        </p>
+
+        <div class="hero-actions au d3">
+          <a href="https://hotfy.digital/dashboard" class="btn-primary">Acessar dashboard &rarr;</a>
+          <a href="#features" class="btn-secondary">Como funciona?</a>
+        </div>
+
+        <div class="hero-feats au d4">
+          <div class="hero-feat"><div class="feat-icon">&#9889;</div>Tempo real</div>
+          <div class="hero-feat"><div class="feat-icon">&#128274;</div>Seguro</div>
+          <div class="hero-feat"><div class="feat-icon">&#128202;</div>Multi-conta</div>
+        </div>
+      </div>
+
+      <div class="hero-visual au d2">
+        <div class="float-card tr">
+          <div class="float-lbl">ROAS Hoje</div>
+          <div class="float-val">3.8x</div>
+          <div class="float-badge">+24% &uarr;</div>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-bar">
+            <div class="dash-dots"><span></span><span></span><span></span></div>
+            <div class="dash-title">Hotfy &mdash; Dashboard</div>
+          </div>
+          <div class="dash-body">
+            <div class="dash-kpis">
+              <div class="dash-kpi">
+                <div class="dash-kpi-lbl">Investimento</div>
+                <div class="dash-kpi-val blue">&#8364; 1.400</div>
+              </div>
+              <div class="dash-kpi">
+                <div class="dash-kpi-lbl">Lucro</div>
+                <div class="dash-kpi-val green">&#8364; 2.840</div>
+              </div>
+              <div class="dash-kpi">
+                <div class="dash-kpi-lbl">CTR</div>
+                <div class="dash-kpi-val">19.7%</div>
+              </div>
+            </div>
+            <div class="dash-chart">
+              <div class="dash-chart-lbl">Evolucao diaria</div>
+              <svg class="chart-svg" viewBox="0 0 400 80" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#4f8ef7" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#4f8ef7" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,70 L40,60 L80,55 L120,45 L160,38 L200,28 L240,22 L280,14 L320,18 L360,8 L400,4 L400,80 L0,80 Z" fill="url(#cg)"/>
+                <path class="chart-line" d="M0,70 L40,60 L80,55 L120,45 L160,38 L200,28 L240,22 L280,14 L320,18 L360,8 L400,4" fill="none" stroke="#4f8ef7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="float-card bl">
+          <div class="float-lbl">Compras hoje</div>
+          <div class="float-val">264</div>
+          <div class="float-badge">3 contas ativas</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="diag"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="tag">Features</div>
+    <h2>Tudo que voce precisa<br>num so lugar.</h2>
+    <p class="sub">Gerencie campanhas, analise resultados e tome decisoes rapidas com dados em tempo real da Meta Ads API.</p>
+
+    <div class="feat-grid">
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#128202;</div>
+        <h3>KPIs em tempo real</h3>
+        <p>Investimento, ROAS, CPR, Lucro e 20+ metricas atualizadas ao vivo direto da API Meta.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#127919;</div>
+        <h3>Presets de colunas</h3>
+        <p>Configure e salve visoes diferentes: Infoproduto, Encapsulado, Branding, Video e muito mais.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#128247;</div>
+        <h3>Campanhas + Criativos</h3>
+        <p>Veja campanhas, conjuntos de anuncios e criativos (com thumbnails) em abas organizadas.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#9889;</div>
+        <h3>Grafico por hora</h3>
+        <p>No periodo "Hoje", o grafico mostra a evolucao hora a hora para decisoes em tempo real.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#127970;</div>
+        <h3>Multi-conta</h3>
+        <p>Gerencie multiplas contas Meta Ads com visao consolidada e individual por conta.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#128276;</div>
+        <h3>Alertas inteligentes</h3>
+        <p>Notificacoes de queda de performance, tokens expirados e anomalias nas campanhas.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#128196;</div>
+        <h3>Export completo</h3>
+        <p>Exporte dados em Excel (.xlsx) ou CSV para relatorios e analises externas facilmente.</p>
+      </div>
+      <div class="feat-cell">
+        <div class="feat-cell-icon">&#128241;</div>
+        <h3>Mobile ready</h3>
+        <p>Dashboard 100% responsivo. Acompanhe resultados pelo celular de qualquer lugar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div class="pricing-wrap">
+      <div>
+        <div class="tag">Precos</div>
+        <h2>Simples e<br><span class="hl">transparente.</span></h2>
+        <p class="sub" style="margin-top:12px">Sem surpresas, sem cobranças escondidas. Pague apenas pelo que usar.</p>
+        <br><br>
+        <a href="https://hotfy.digital/dashboard" class="btn-primary">Ver todos os planos &rarr;</a>
+      </div>
+
+      <div class="pricing-tbl">
+        <div class="p-row hdr">
+          <span>Plano</span><span>Contas</span><span>Preco</span>
+        </div>
+        <div class="p-row">
+          <span class="pill-hotfy">Starter</span>
+          <span class="p-val">1 conta</span>
+          <span class="p-val green">Gratis</span>
+        </div>
+        <div class="p-row">
+          <span class="pill-hotfy">Pro</span>
+          <span class="p-val">5 contas</span>
+          <span class="p-val">R$ 97/mes</span>
+        </div>
+        <div class="p-row">
+          <span class="pill-hotfy">Agency</span>
+          <span class="p-val">Ilimitado</span>
+          <span class="p-val">R$ 297/mes</span>
+        </div>
+        <div class="p-row" style="background:var(--bg2)">
+          <span style="font-size:13px;color:var(--text3);grid-column:1/-1">Todas as features incluidas em todos os planos.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="diag"></div>
+
+<!-- INTEGRATIONS -->
+<section style="text-align:center">
+  <div class="container">
+    <div class="tag">Integracoes</div>
+    <h2>Conectado ao que<br>voce ja usa.</h2>
+    <p class="sub" style="margin:0 auto">Integre com as principais plataformas de trafego e vendas em poucos cliques.</p>
+
+    <div class="int-pills">
+      <div class="int-pill">&#128108; Meta Ads</div>
+      <div class="int-pill">&#128722; Hotmart</div>
+      <div class="int-pill">&#128994; Kiwify</div>
+      <div class="int-pill">&#127919; Google Ads</div>
+      <div class="int-pill">&#128172; WhatsApp</div>
+      <div class="int-pill">&#128279; Webhooks</div>
+    </div>
+
+    <div class="int-cards" style="text-align:left">
+      <div class="int-card">
+        <div class="int-preview">
+          <div>
+            <div style="font-size:36px;margin-bottom:8px">&#128202;</div>
+            <div style="font-weight:600;color:var(--text2)">Meta Ads API v19.0</div>
+            <div style="font-size:12px;color:var(--text4);margin-top:4px">Dados em tempo real</div>
+          </div>
+        </div>
+        <h3>Meta Ads API</h3>
+        <p>Conexao direta com a API da Meta para dados de campanhas, conjuntos e criativos em tempo real.</p>
+        <a href="https://hotfy.digital/dashboard" class="int-link">Conectar conta &rarr;</a>
+      </div>
+      <div class="int-card">
+        <div class="int-preview">
+          <div>
+            <div style="font-size:36px;margin-bottom:8px">&#128722;</div>
+            <div style="font-weight:600;color:var(--text2)">Hotmart Webhooks</div>
+            <div style="font-size:12px;color:var(--text4);margin-top:4px">Vendas em tempo real</div>
+          </div>
+        </div>
+        <h3>Vendas &amp; Conversoes</h3>
+        <p>Receba webhooks de compras da Hotmart e cruze com os dados de campanha para calcular ROAS real.</p>
+        <a href="https://hotfy.digital/dashboard" class="int-link">Saiba mais &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SUITE -->
+<section>
+  <div class="container">
+    <div class="suite-wrap">
+      <div>
+        <div class="tag">Suite completa</div>
+        <h2>Uma plataforma<br>para <span class="hl">escalar.</span></h2>
+        <p class="sub" style="margin-top:12px">Centralize campanhas, vendas e analise num dashboard desenvolvido por gestores para gestores.</p>
+
+        <div class="suite-feats">
+          <div class="suite-feat">
+            <div class="sf-icon">&#128737;</div>
+            <div>
+              <h4>Protecao e alertas</h4>
+              <p>Alertas automaticos de campanhas pausadas, queda de performance e tokens expirados.</p>
+            </div>
+          </div>
+          <div class="suite-feat">
+            <div class="sf-icon">&#127775;</div>
+            <div>
+              <h4>Criativos com thumbnail</h4>
+              <p>Visualize o criativo de cada anuncio com metricas individuais de performance.</p>
+            </div>
+          </div>
+          <div class="suite-feat">
+            <div class="sf-icon">&#128260;</div>
+            <div>
+              <h4>Comparacao de periodos</h4>
+              <p>Compare Hoje vs Ontem, esta semana vs anterior com deltas automaticos em cada KPI.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-card">
+        <div style="font-size:11px;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px">Resumo por conta</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="acc-row">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="acc-avatar" style="background:linear-gradient(135deg,#4f8ef7,#93c5fd)">A</div>
+              <div><div class="acc-name">AN01</div><div class="acc-sub">Marcelo</div></div>
+            </div>
+            <div class="acc-val">
+              <div>&#8364; 580</div>
+              <div class="acc-delta green-d">+12% &uarr;</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="acc-avatar" style="background:linear-gradient(135deg,#34d399,#6ee7b7)">A</div>
+              <div><div class="acc-name">AN02</div><div class="acc-sub">Marcelo</div></div>
+            </div>
+            <div class="acc-val">
+              <div>&#8364; 510</div>
+              <div class="acc-delta red-d">-4% &darr;</div>
+            </div>
+          </div>
+          <div class="acc-row">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="acc-avatar" style="background:linear-gradient(135deg,#fbbf24,#fde68a)">A</div>
+              <div><div class="acc-name">AN03</div><div class="acc-sub">Marcelo</div></div>
+            </div>
+            <div class="acc-val">
+              <div>&#8364; 310</div>
+              <div class="acc-delta gray-d">sem dados</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--text4)">Total investido</span>
+          <span style="font-size:18px;font-weight:700;color:var(--primary)">&#8364; 1.400</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="diag"></div>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="container">
+    <div class="tag">Depoimentos</div>
+    <h2>Historias reais de<br>quem usa o Hotfy.</h2>
+    <p class="sub">Gestores e afiliados que transformaram sua operacao com dados em tempo real.</p>
+  </div>
+
+  <div class="testi-track">
+    <div class="testi-scroll">
+      <div class="testi-card">
+        <div class="testi-name">Lucas Ferreira <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@lucasferr &middot; Gestor Meta Ads</div>
+        <p class="testi-text">"O Hotfy mudou completamente como acompanho meus resultados. Antes perdia horas no Gerenciador, agora vejo tudo numa tela."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Ana Paula Costa <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@anapaulac &middot; Afiliada</div>
+        <p class="testi-text">"O grafico por hora e incrivel. Consigo ver exatamente em qual horario minhas campanhas performam melhor e otimizar na hora."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Bruno Alves <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@brunoalves &middot; Agencia de Trafego</div>
+        <p class="testi-text">"Gerencio 8 clientes no Hotfy. A visao multi-conta e os presets de colunas tornaram minha operacao muito mais profissional."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Carla Mendes <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@carlamendes &middot; Info-produtora</div>
+        <p class="testi-text">"O preset Infoproduto mostra exatamente o que preciso: leads, compras, CPR e ROI. Sem configurar nada, ja funciona perfeito."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Rodrigo Silva <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@rodrigosilva &middot; E-commerce</div>
+        <p class="testi-text">"Os alertas automaticos me salvam toda semana. Meu token expirou e o Hotfy me avisou antes de eu perder dados do dia inteiro."</p>
+      </div>
+      <!-- duplicate for infinite scroll -->
+      <div class="testi-card">
+        <div class="testi-name">Lucas Ferreira <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@lucasferr &middot; Gestor Meta Ads</div>
+        <p class="testi-text">"O Hotfy mudou completamente como acompanho meus resultados. Antes perdia horas no Gerenciador, agora vejo tudo numa tela."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Ana Paula Costa <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@anapaulac &middot; Afiliada</div>
+        <p class="testi-text">"O grafico por hora e incrivel. Consigo ver exatamente em qual horario minhas campanhas performam melhor e otimizar na hora."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Bruno Alves <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@brunoalves &middot; Agencia de Trafego</div>
+        <p class="testi-text">"Gerencio 8 clientes no Hotfy. A visao multi-conta e os presets de colunas tornaram minha operacao muito mais profissional."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Carla Mendes <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@carlamendes &middot; Info-produtora</div>
+        <p class="testi-text">"O preset Infoproduto mostra exatamente o que preciso: leads, compras, CPR e ROI. Sem configurar nada, ja funciona perfeito."</p>
+      </div>
+      <div class="testi-card">
+        <div class="testi-name">Rodrigo Silva <span class="testi-v">&#10003;</span></div>
+        <div class="testi-handle">@rodrigosilva &middot; E-commerce</div>
+        <p class="testi-text">"Os alertas automaticos me salvam toda semana. Meu token expirou e o Hotfy me avisou antes de eu perder dados do dia inteiro."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FAQ -->
+<section>
+  <div class="container">
+    <div class="faq-wrap">
+      <div class="tag">FAQ</div>
+      <h2>Duvidas frequentes.</h2>
+      <p class="sub">Respondemos as perguntas mais comuns sobre o Hotfy.</p>
+
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            O que e o Hotfy e para quem e indicado?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">O Hotfy e um dashboard de gestao de campanhas Meta Ads em tempo real. Indicado para gestores de trafego, afiliados, info-produtores e agencias que precisam acompanhar resultados com agilidade.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Quais plataformas de anuncio sao suportadas?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">Atualmente o Hotfy integra com a Meta Ads API (Facebook e Instagram Ads). Estamos trabalhando na integracao com Google Ads e TikTok Ads.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Posso gerenciar multiplas contas de anuncio?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">Sim! O Hotfy foi desenvolvido para gestao multi-conta. Adicione quantas contas Meta Ads quiser e veja uma visao consolidada ou individual por conta.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Os dados sao em tempo real?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">Sim, os dados sao buscados diretamente da Meta Ads API. A cada atualizacao, o dashboard consulta a API e exibe os dados mais recentes, com a latencia natural da propria Meta.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+            Como funciona o grafico por hora no periodo "Hoje"?
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">Quando voce seleciona "Hoje", o grafico exibe dados hora a hora (00h a 23h) usando a breakdown hourly_stats da Meta API. Isso permite identificar horarios de pico e otimizar campanhas durante o dia.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="container" style="position:relative;z-index:1">
+    <p class="cta-eyebrow">Voce chegou ate aqui.</p>
+    <h2>Se chegou ate aqui,<br>e porque quer <span class="hl">escalar.</span></h2>
+    <p>Entao vai la &mdash; acessa o dashboard e começa a tomar decisoes com dados reais.</p>
+    <a href="https://hotfy.digital/dashboard" class="btn-primary" style="font-size:18px;padding:18px 40px">
+      Acessar Hotfy agora &rarr;
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="#" class="nav-logo footer-logo">
+          <div class="logo-dot">&#9889;</div>
+          Hotfy
+        </a>
+        <p class="footer-desc">Dashboard de gestao de campanhas Meta Ads em tempo real. Feito para quem vive de resultados.</p>
+      </div>
+      <div>
+        <h5>Produto</h5>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Precos</a></li>
+          <li><a href="https://hotfy.digital/dashboard">Dashboard</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Suporte</h5>
+        <ul>
+          <li><a href="#">ajuda@hotfy.digital</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Privacidade</a></li>
+          <li><a href="#">Termos de uso</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&#169; 2026 Hotfy &mdash; Todos os direitos reservados.</span>
+      <span>Feito com &#9889; para gestores de trafego</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Scroll animations
+if ('IntersectionObserver' in window) {
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feat-cell, .suite-feat, .testi-card, .int-card, .acc-row').forEach(function(el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(18px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    obs.observe(el);
+  });
+}
+</script>
+</body>
+</html>
