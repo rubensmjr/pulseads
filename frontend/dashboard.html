@@ -1368,12 +1368,15 @@ function renderAllView(content, title) {
     ${alertsBar(accs)}
     ${compareBar()}
     <div class="kpi-grid stagger">
-      ${kpi('💰','Investimento Total',fC(totals.spend,accs.find(a=>a.status==='ok')?.currency),'Todas as contas','blue')}
-      ${kpi('👁','Impressões Totais',fN(totals.impressions),'Soma geral','amber')}
-      ${kpi('🖱','Cliques Totais',fN(totals.clicks),'CTR médio: '+fP(avgCTR),'green')}
-      ${kpi('💲','CPC Médio',fC(avgCPC,accs.find(a=>a.status==='ok')?.currency),'Média consolidada','amber')}
-      ${kpi('🎯','Conversões',fN(totals.conversions),'Total de compras','green')}
-      ${kpi('📁','Contas',accs.filter(a=>a.status==='ok').length+'/'+accs.length,'Conectadas','blue')}
+    ${(()=>{
+      const _cur=accs.find(a=>a.status==='ok')?.currency||'USD';
+      const _ai=buildAggInsights(accs,_cur);
+      return ACTIVE_COLS.filter(k=>ALL_COLUMNS[k]).map(k=>{
+        const _col=ALL_COLUMNS[k];
+        const _val=_col.fn(_ai,_cur);
+        return kpi(_col.icon||'📊',_col.label,_val,_col.sub||'','blue');
+      }).join('');
+    })()}
     </div>
     <div class="charts-row">
       <div class="chart-card">
@@ -1427,12 +1430,15 @@ function renderManagerView(content, title, managerName) {
     </div>
     ${alertsBar(accs)}
     <div class="kpi-grid stagger">
-      ${kpi('💰','Investimento Total',fC(totals.spend,accs.find(a=>a.status==='ok')?.currency),'Contas do gestor','blue')}
-      ${kpi('👁','Impressões',fN(totals.impressions),'Soma das contas','amber')}
-      ${kpi('🖱','Cliques',fN(totals.clicks),'CTR médio: '+fP(avgCTR),'green')}
-      ${kpi('💲','CPC Médio',fC(avgCPC,accs.find(a=>a.status==='ok')?.currency),'Média das contas','amber')}
-      ${kpi('🎯','Conversões',fN(totals.conversions),'Total do gestor','green')}
-      ${kpi('📁','Contas',accs.length+'','Gerenciadas','blue')}
+    ${(()=>{
+      const _cur=accs.find(a=>a.status==='ok')?.currency||'USD';
+      const _ai=buildAggInsights(accs,_cur);
+      return ACTIVE_COLS.filter(k=>ALL_COLUMNS[k]).map(k=>{
+        const _col=ALL_COLUMNS[k];
+        const _val=_col.fn(_ai,_cur);
+        return kpi(_col.icon||'📊',_col.label,_val,_col.sub||'','blue');
+      }).join('');
+    })()}
     </div>
     <div class="charts-row">
       <div class="chart-card">
@@ -1476,8 +1482,8 @@ function buildLineChart(id, accs) {
   if(accs.length===1){
     const acc=accs[0];
     const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
-    datasets.push({label:'Investimento',data:allDates.map(d=>parseFloat(byDate[d]?.spend||0)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y'});
-    datasets.push({label:'Cliques',data:allDates.map(d=>parseInt(byDate[d]?.clicks||0)),borderColor:'#34d399',backgroundColor:'transparent',tension:0.4,borderDash:[4,4],yAxisID:'y2'});
+    datasets.push({icon:'💰',label:'Investimento',data:allDates.map(d=>parseFloat(byDate[d]?.spend||0)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y'});
+    datasets.push({icon:'🖱',label:'Cliques',data:allDates.map(d=>parseInt(byDate[d]?.clicks||0)),borderColor:'#34d399',backgroundColor:'transparent',tension:0.4,borderDash:[4,4],yAxisID:'y2'});
   } else {
     accs.forEach(acc=>{
       const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
@@ -1623,6 +1629,46 @@ function buildDonutAllChart(id, accs) {
 // ════════════════════════════════════════════════════
 //  HTML BUILDERS
 // ════════════════════════════════════════════════════
+// buildAggInsights: soma todos os campos de ALL_COLUMNS de todas as contas
+function buildAggInsights(accs, cur) {
+  const ok = accs.filter(a=>a.status==='ok');
+  const ins = ok.map(a=>a.insights||{});
+  // Somar campos numéricos básicos
+  const spend       = ins.reduce((s,i)=>s+parseFloat(i.spend||0),0);
+  const impressions = ins.reduce((s,i)=>s+parseInt(i.impressions||0),0);
+  const clicks      = ins.reduce((s,i)=>s+parseInt(i.clicks||0),0);
+  const reach       = ins.reduce((s,i)=>s+parseInt(i.reach||0),0);
+  const frequency   = impressions>0&&reach>0 ? impressions/reach : 0;
+  const cpm         = impressions>0 ? (spend/impressions)*1000 : 0;
+  const cpc         = clicks>0 ? spend/clicks : 0;
+  const ctr         = impressions>0 ? (clicks/impressions)*100 : 0;
+  const unique_clicks= ins.reduce((s,i)=>s+parseInt((i.unique_clicks||i.unique_link_clicks_ctr&&0)||0),0);
+  const unique_ctr  = impressions>0 ? (unique_clicks/impressions)*100 : 0;
+  // Conversões e valor
+  const allActs = ok.flatMap(a=>(a.insights?.actions||[]));
+  const allVals = ok.flatMap(a=>(a.insights?.action_values||[]));
+  const allCosts= ok.flatMap(a=>(a.insights?.cost_per_action_type||[]));
+  const purchases= parseInt(allActs.find(a=>a.action_type==='purchase')?.value||0);
+  const purchase_val= parseFloat(allVals.find(a=>a.action_type==='purchase')?.value||0);
+  const leads    = parseInt(allActs.find(a=>a.action_type==='lead')?.value||0);
+  const cost_per_purchase= parseFloat(allCosts.find(a=>a.action_type==='purchase')?.value||0);
+  const conversions= purchases+leads;
+  const lucro    = purchase_val - spend;
+  const roas     = spend>0 ? purchase_val/spend : 0;
+  const post_engagement= parseInt(allActs.find(a=>a.action_type==='post_engagement')?.value||0);
+  const reactions= parseInt(allActs.find(a=>a.action_type==='post_reaction')?.value||0);
+  const comments = parseInt(allActs.find(a=>a.action_type==='comment')?.value||0);
+  const shares   = parseInt(allActs.find(a=>a.action_type==='post')?.value||0);
+  const link_clicks= parseInt(allActs.find(a=>a.action_type==='link_click')?.value||0);
+  const cpp      = clicks>0 ? spend/clicks : 0;  // cost_per_unique_click approx
+  const video_views= parseInt(allActs.find(a=>a.action_type==='video_view')?.value||0);
+  return { spend, impressions, clicks, reach, frequency, cpm, cpc, ctr,
+    unique_clicks, unique_ctr, purchases, purchase_val, leads, cost_per_purchase,
+    conversions, lucro, roas, post_engagement, reactions, comments, shares,
+    link_clicks, cpp, video_views, actions:allActs, action_values:allVals,
+    cost_per_action_type:allCosts };
+}
+
 function aggregateAccounts(accs) {
   let spend=0,impressions=0,clicks=0,conversions=0;
   accs.forEach(acc=>{
@@ -1702,22 +1748,22 @@ function accOverCard(acc,idx) {
 const ALL_COLUMNS = {
   // Performance
   spend:      { label:'Investimento', group:'Performance', default:true,  fn:(i,cur)=>fC(i.spend,cur) },
-  impressions:{ label:'Impressões',   group:'Performance', default:true,  fn:(i)=>fN(i.impressions) },
+  impressions:{ icon:'👁',label:'Impressões',   group:'Performance', default:true,  fn:(i)=>fN(i.impressions) },
   clicks:     { label:'Cliques',      group:'Performance', default:true,  fn:(i)=>fN(i.clicks) },
-  ctr:        { label:'CTR',          group:'Performance', default:true,  fn:(i)=>fP(i.ctr) },
-  cpc:        { label:'CPC',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpc,cur) },
-  cpm:        { label:'CPM',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpm,cur) },
+  ctr:        { icon:'🎯',label:'CTR',          group:'Performance', default:true,  fn:(i)=>fP(i.ctr) },
+  cpc:        { icon:'$',label:'CPC',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpc,cur) },
+  cpm:        { icon:'📊',label:'CPM',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpm,cur) },
   cpp:        { label:'CPP',          group:'Performance', default:false, fn:(i,cur)=>fC(i.cost_per_unique_click,cur) },
   // Conversões
-  purchases:  { label:'Compras',      group:'Conversões',  default:true,  fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='purchase')?.value) },
-  purchase_val:{ label:'Valor Compras',group:'Conversões', default:false, fn:(i,cur)=>fC((i.action_values||[]).find(a=>a.action_type==='purchase')?.value,cur) },
-  leads:      { label:'Leads',        group:'Conversões',  default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='lead')?.value) },
-  cost_per_purchase:{ label:'CPR',    group:'Conversões',  default:false, fn:(i,cur)=>fC((i.cost_per_action_type||[]).find(a=>a.action_type==='purchase')?.value,cur) },
-    roi:       { label:'ROI',          group:'Conversões',    default:false, fn:(i,cur)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return fC(v-s,cur);} },
-  lucro:        { label:'Lucro',         group:'Conversões',  default:true,  fn:(i,cur)=>{ const s=parseFloat(i.spend||0); const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0); const l=v-s; return (l>=0?'+':'')+fC(l,cur); } },
+  purchases:  { icon:'🛒',label:'Compras',      group:'Conversões',  default:true,  fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='purchase')?.value) },
+  purchase_val:{ icon:'💵',label:'Valor Compras',group:'Conversões', default:false, fn:(i,cur)=>fC((i.action_values||[]).find(a=>a.action_type==='purchase')?.value,cur) },
+  leads:      { icon:'🧲',label:'Leads',        group:'Conversões',  default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='lead')?.value) },
+  cost_per_purchase:{ icon:'🏷',label:'CPR',    group:'Conversões',  default:false, fn:(i,cur)=>fC((i.cost_per_action_type||[]).find(a=>a.action_type==='purchase')?.value,cur) },
+    roi:       { icon:'📈',label:'ROI',          group:'Conversões',    default:false, fn:(i,cur)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return fC(v-s,cur);} },
+  lucro:        { icon:'💹',label:'Lucro',         group:'Conversões',  default:true,  fn:(i,cur)=>{ const s=parseFloat(i.spend||0); const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0); const l=v-s; return (l>=0?'+':'')+fC(l,cur); } },
   roas:       { label:'ROI',         group:'Conversões',  default:false, fn:(i)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return s>0?fD((v-s)/s)+'x':'—';} },
   // Alcance
-  reach:      { label:'Alcance',      group:'Alcance',     default:false, fn:(i)=>fN(i.reach) },
+  reach:      { icon:'🌐',label:'Alcance',      group:'Alcance',     default:false, fn:(i)=>fN(i.reach) },
   frequency:  { label:'Frequência',   group:'Alcance',     default:false, fn:(i)=>fD(i.frequency) },
   unique_clicks:{ label:'Cliques Únicos',group:'Alcance',  default:false, fn:(i)=>fN(i.unique_clicks) },
   unique_ctr: { label:'CTR Único',    group:'Alcance',     default:false, fn:(i)=>fP(i.unique_ctr) },
