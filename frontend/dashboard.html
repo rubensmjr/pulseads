@@ -1387,11 +1387,11 @@ function renderSingleView(content, title, idx) {
     ${tabsTable(acc.campaigns,acc.adsets,acc.ads||[],'tbl_'+idx,acc.currency,idx)}
   </div>`;
 
-  requestAnimationFrame(()=>{
+  setTimeout(()=>{
     if(S.period==='today') buildHourlyLineChart('chartLine',acc);
     else buildLineChart('chartLine',[acc]);
     buildDonutChart('chartDonut',acc.campaigns||[]);
-  });
+  }, 50);
 }
 
 // ════════════════════════════════════════════════════
@@ -1543,7 +1543,7 @@ function buildLineChart(id, accs) {
       scales:{
         x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},maxTicksLimit:10}},
         y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a5a78',font:{size:10},callback:v=>'R$'+parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:0})}},
-        ...(accs.length===1?{y2:{position:'right',grid:{display:false},ticks:{color:'#5a5a78',font:{size:10}}}}:{})
+        ...(accs.length===1?{}:{})
       }
     }
   });
@@ -1560,7 +1560,7 @@ function buildHourlyLineChart(id, acc) {
   const hours=Array.from({length:24},(_,i)=>i);
   const hd=acc.hourlyData||{};
   const spendData=hours.map(h=>parseFloat((hd[h]||{}).spend||0));
-  const clickData=hours.map(h=>parseInt((hd[h]||{}).clicks||0));
+  const revenueData=hours.map(h=>parseFloat((hd[h]||{}).revenue||0));
   const nowH=new Date().getHours();
   const labels=hours.map(h=>h+'h');
 
@@ -1570,7 +1570,7 @@ function buildHourlyLineChart(id, acc) {
       labels,
       datasets:[
         {label:'Investimento',data:spendData,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y',pointRadius:hours.map(h=>h<=nowH?3:0),pointHoverRadius:5},
-        {label:'Cliques',data:clickData,borderColor:'#34d399',backgroundColor:'transparent',tension:0.4,borderDash:[4,4],yAxisID:'y2',pointRadius:hours.map(h=>h<=nowH?3:0),pointHoverRadius:5}
+        {label:'Vendas',data:revenueData,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',tension:0.4,borderDash:[4,4],yAxisID:'y',pointRadius:hours.map(h=>h<=nowH?3:0),pointHoverRadius:5}
       ]
     },
     options:{
