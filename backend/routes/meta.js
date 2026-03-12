@@ -110,7 +110,7 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
       limit: 100,
     }),
       metaFetch(token, acc.account_id + '/insights', {
-        fields: 'spend,impressions,clicks,ctr,cpc',
+        fields: 'spend,impressions,clicks,ctr,cpc,action_values',
         time_range: tr, time_increment: 1, level: 'account',
       }),
       // Previous period
@@ -135,7 +135,15 @@ router.get('/:accountId/all', authMiddleware, async (req, res) => {
       campaigns: campRes.status==='fulfilled' ? campRes.value.data||[] : [],
       adsets: adsetRes.status==='fulfilled' ? adsetRes.value.data||[] : [],
       ads: adsRes.status==='fulfilled' ? adsRes.value.data||[] : [],
-      dailyData: dailyRes.status==='fulfilled' ? dailyRes.value.data||[] : [],
+      dailyData: (dailyRes.status==='fulfilled' ? dailyRes.value.data||[] : []).map(d => ({
+      ...d,
+      purchase_value: parseFloat(((d.action_values||[]).find(a=>
+        a.action_type==='purchase'||
+        a.action_type==='offsite_conversion.fb_pixel_purchase'||
+        a.action_type==='onsite_web_app_purchase'||
+        a.action_type==='onsite_web_purchase'
+      )||{}).value||0)
+    })),
       prevInsights: prevRes.status==='fulfilled' ? prevRes.value.data?.[0]||null : null,
     });
   } catch(e) { res.status(400).json({ error: e.message }); }
@@ -151,7 +159,7 @@ router.get('/:accountId/insights/hourly', authMiddleware, async (req, res) => {
     const tr = JSON.stringify({ since: today, until: today });
 
     const data = await metaFetch(token, acc.account_id + '/insights', {
-      fields: 'spend,impressions,clicks,ctr,cpc',
+      fields: 'spend,impressions,clicks,ctr,cpc,action_values',
       time_range: tr,
       breakdowns: 'hourly_stats_aggregated_by_advertiser_time_zone',
       level: 'account',
@@ -170,7 +178,9 @@ router.get('/:accountId/insights/hourly', authMiddleware, async (req, res) => {
             spend:       parseFloat(row.spend       || 0),
             clicks:      parseInt(row.clicks        || 0),
             impressions: parseInt(row.impressions   || 0),
-          };
+          
+        revenue:     parseFloat(((row.action_values||[]).find(a=>a.action_type==='offsite_conversion.fb_pixel_purchase'||a.action_type==='purchase')||{}).value||0),
+      };
         }
       }
     }

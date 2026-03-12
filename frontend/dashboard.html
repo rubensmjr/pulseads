@@ -1522,7 +1522,7 @@ function buildLineChart(id, accs) {
     const acc=accs[0];
     const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
     datasets.push({icon:'💰',label:'Investimento',data:allDates.map(d=>parseFloat(byDate[d]?.spend||0)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y'});
-    datasets.push({icon:'✧',label:'Vendas',data:allDates.map(d=>parseFloat(((byDate[d]?.action_values||[]).find(a=>a.action_type==='offsite_conversion.fb_pixel_purchase'||a.action_type==='purchase')||{}).value||0)),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',tension:0.4,borderDash:[4,4],yAxisID:'y'});
+    datasets.push({icon:'✧',label:'Vendas',data:allDates.map(d=>parseFloat(byDate[d]?.purchase_value||0)),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',tension:0.4,borderDash:[4,4],yAxisID:'y'});
   } else {
     accs.forEach(acc=>{
       const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
