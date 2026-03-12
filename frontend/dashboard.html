@@ -326,7 +326,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .kpi-card.red::before{background:radial-gradient(ellipse at top left,var(--red-glow),transparent 60%)}
 .kpi-card.purple::before{background:radial-gradient(ellipse at top left,var(--purple-glow),transparent 60%)}
 .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;position:relative}
-.kpi-icon{font-size:18px}
+.kpi-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,0.06);color:var(--text2);flex-shrink:0}
+.kpi-icon svg{opacity:0.9}
 .kpi-delta{font-size:10px;font-weight:700;padding:3px 7px;border-radius:100px;letter-spacing:0.3px}
 .kpi-delta.up{background:var(--green-glow);color:var(--green)}
 .kpi-delta.down{background:var(--red-glow);color:var(--red)}
@@ -725,6 +726,35 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .kpi-card, .vkpi, .table-row { cursor: default; }
 .acc-item, .period-pill, .btn-icon, .btn-primary, .btn-secondary { cursor: pointer; }
 
+
+    /* ── Premium overrides ─────────────────────────── */
+    .kpi-card{border:1px solid rgba(255,255,255,0.06);border-top:none;position:relative;overflow:hidden;transition:border-color var(--transition),box-shadow var(--transition)}
+    .kpi-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.02) 0%,transparent 60%);pointer-events:none}
+    .kpi-card:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 8px 32px rgba(0,0,0,0.25)}
+    .kpi-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+    .kpi-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1.8px;color:var(--text3);font-weight:600;flex:1}
+    .kpi-value{font-size:22px;font-weight:700;letter-spacing:-0.5px;line-height:1;margin-bottom:4px}
+    .kpi-sub{font-size:10.5px;color:var(--text3);margin-top:6px;line-height:1.4}
+    .delta{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;letter-spacing:0.3px}
+    .delta.up{background:rgba(52,211,153,0.12);color:var(--green)}
+    .delta.dn{background:rgba(248,113,113,0.12);color:var(--red)}
+    /* Sidebar refinements */
+    .sidebar{border-right:1px solid rgba(255,255,255,0.05)}
+    .acc-item{border-radius:8px;transition:background var(--transition)}
+    /* View tabs */
+    .view-tab{gap:5px;font-size:11.5px;letter-spacing:0.2px;display:inline-flex;align-items:center}
+    .view-tab svg{opacity:0.7}
+    .view-tab.active svg{opacity:1}
+    /* Topbar */
+    .topbar{border-bottom:1px solid rgba(255,255,255,0.05);backdrop-filter:blur(12px)}
+    /* Table header */
+    .data-table th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600}
+    /* Chart section */
+    .chart-section{border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius)}
+    /* Section title */
+    .chart-header{padding:12px 16px 0;border-bottom:none}
+    .chart-title{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3)}
+
 </style>
 </head>
 <body>
@@ -939,6 +969,27 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 // ════════════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════════════
+
+// ── SVG Icons (Lucide-style, 16x16 stroke) ──────────────────────
+const IC = {
+  spend:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  eye:      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  cpm:      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  target:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  roi:      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+  profit:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+  click:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg>',
+  cart:     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
+  bag:      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+  users:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  cpc:      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  lead:     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  chart:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>',
+  funnel:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+  freq:     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>',
+  link:     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+};
+
 const S = {
   accounts: [],
   active: null,   // number idx | 'all' | 'manager:NAME'
@@ -1346,20 +1397,20 @@ function renderSingleView(content, title, idx) {
     <div class="kpi-grid stagger">
       ${(()=>{
         const KPI_MAP={
-          spend: ()=>kpi('💰','Investimento',fCa(i.spend,acc),'Total no periodo','blue',delta(i.spend,pi.spend),fCa(pi.spend,acc)),
-          impressions: ()=>kpi('👁','Impressoes',fN(i.impressions),'Alcance: '+fN(i.reach),'amber',delta(i.impressions,pi.impressions),fN(pi.impressions)),
-          clicks: ()=>kpi('🖱','Cliques',fN(i.clicks),'CTR: '+fP(i.ctr),'green',delta(i.clicks,pi.clicks),fN(pi.clicks)),
-          cpm: ()=>kpi('📊','CPM',fCa(i.cpm,acc),'Custo por mil impr.','blue',delta(i.cpm,pi.cpm,true),fCa(pi.cpm,acc)),
+          spend: ()=>kpi(IC.spend,'Investimento',fCa(i.spend,acc),'Total no periodo','blue',delta(i.spend,pi.spend),fCa(pi.spend,acc)),
+          impressions: ()=>kpi(IC.eye,'Impressoes',fN(i.impressions),'Alcance: '+fN(i.reach),'amber',delta(i.impressions,pi.impressions),fN(pi.impressions)),
+          clicks: ()=>kpi(IC.click,'Cliques',fN(i.clicks),'CTR: '+fP(i.ctr),'green',delta(i.clicks,pi.clicks),fN(pi.clicks)),
+          cpm: ()=>kpi(IC.cpm,'CPM',fCa(i.cpm,acc),'Custo por mil impr.','blue',delta(i.cpm,pi.cpm,true),fCa(pi.cpm,acc)),
           cpc: ()=>kpi('💲','CPC',fCa(i.cpc,acc),'Custo por clique','amber',delta(i.cpc,pi.cpc,true),fCa(pi.cpc,acc)),
-          purchases: ()=>kpi('🎯','Conversoes',fN(conv),'Leads: '+fN(leads),'green',delta(conv,prevConv),'Prev: '+fN(prevConv)),
+          purchases: ()=>kpi(IC.target,'Conversoes',fN(conv),'Leads: '+fN(leads),'green',delta(conv,prevConv),'Prev: '+fN(prevConv)),
           leads: ()=>kpi('📋','Leads',fN(leads),'Total de leads','green',delta(leads,prevLeads),'Prev: '+fN(prevLeads)),
-            roi: ()=>kpi('💰','ROI',fCa(convValue-i.spend,acc),'Receita - Investimento',convValue-i.spend>=0?'green':'red',null,''),
+            roi: ()=>kpi(IC.spend,'ROI',fCa(convValue-i.spend,acc),'Receita - Investimento',convValue-i.spend>=0?'green':'red',null,''),
           lucro: ()=>{ const pv=parseFloat((i.action_values||[]).find(a=>a.action_type==="purchase")?.value||0); const sp=parseFloat(i.spend||0); const l=pv-sp; const cur=getCurrency(acc); return kpi("💰","Lucro",fC(l,cur),"Receita de compras − Investimento",l>=0?"green":"red",null,""); },
-          roas: ()=>kpi('📈','ROI',i.spend>0?(((convValue-i.spend)/i.spend).toFixed(2)+'x'):'—','Retorno sobre gasto','green',null,''),
-          ctr: ()=>kpi('🎯','CTR',fP(i.ctr),'Taxa de cliques','amber',delta(i.ctr,pi.ctr),fP(pi.ctr)),
-          reach: ()=>kpi('👥','Alcance',fN(i.reach),'Pessoas unicas','blue',delta(i.reach,pi.reach),fN(pi.reach)),
+          roas: ()=>kpi(IC.roi,'ROI',i.spend>0?(((convValue-i.spend)/i.spend).toFixed(2)+'x'):'—','Retorno sobre gasto','green',null,''),
+          ctr: ()=>kpi(IC.target,'CTR',fP(i.ctr),'Taxa de cliques','amber',delta(i.ctr,pi.ctr),fP(pi.ctr)),
+          reach: ()=>kpi(IC.users,'Alcance',fN(i.reach),'Pessoas unicas','blue',delta(i.reach,pi.reach),fN(pi.reach)),
           frequency: ()=>kpi('🔁','Frequencia',(+i.frequency||0).toFixed(2),'Impressoes por pessoa','amber',null,''),
-          purchase_val: ()=>kpi('🛒','Valor Compras',fCa((i.action_values||[]).find(a=>a.action_type=='purchase')?.value,acc),'Receita de compras','green',null,''),
+          purchase_val: ()=>kpi(IC.cart,'Valor Compras',fCa((i.action_values||[]).find(a=>a.action_type=='purchase')?.value,acc),'Receita de compras','green',null,''),
           cost_per_purchase: ()=>kpi('💸','CPR',fCa((i.cost_per_action_type||[]).find(a=>a.action_type=='purchase')?.value,acc),'Custo por resultado','amber',null,''),
         };
         return ACTIVE_COLS.filter(k=>KPI_MAP[k]).map(k=>KPI_MAP[k]()).join('');
@@ -1521,8 +1572,8 @@ function buildLineChart(id, accs) {
   if(accs.length===1){
     const acc=accs[0];
     const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
-    datasets.push({icon:'💰',label:'Investimento',data:allDates.map(d=>parseFloat(byDate[d]?.spend||0)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y'});
-    datasets.push({icon:'✧',label:'Vendas',data:allDates.map(d=>parseFloat(byDate[d]?.purchase_value||0)),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',tension:0.4,borderDash:[4,4],yAxisID:'y'});
+    datasets.push({icon:IC.spend,label:'Investimento',data:allDates.map(d=>parseFloat(byDate[d]?.spend||0)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y'});
+    datasets.push({icon:IC.bag,label:'Vendas',data:allDates.map(d=>parseFloat(byDate[d]?.purchase_value||0)),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',tension:0.4,borderDash:[4,4],yAxisID:'y'});
   } else {
     accs.forEach(acc=>{
       const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
@@ -1787,19 +1838,19 @@ function accOverCard(acc,idx) {
 const ALL_COLUMNS = {
   // Performance
   spend:      { label:'Investimento', group:'Performance', default:true,  fn:(i,cur)=>fC(i.spend,cur) },
-  impressions:{ icon:'👁',label:'Impressões',   group:'Performance', default:true,  fn:(i)=>fN(i.impressions) },
+  impressions:{ icon:IC.eye,label:'Impressões',   group:'Performance', default:true,  fn:(i)=>fN(i.impressions) },
   clicks:     { label:'Cliques',      group:'Performance', default:true,  fn:(i)=>fN(i.clicks) },
-  ctr:        { icon:'🎯',label:'CTR',          group:'Performance', default:true,  fn:(i)=>fP(i.ctr) },
-  cpc:        { icon:'$',label:'CPC',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpc,cur) },
-  cpm:        { icon:'📊',label:'CPM',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpm,cur) },
+  ctr:        { icon:IC.target,label:'CTR',          group:'Performance', default:true,  fn:(i)=>fP(i.ctr) },
+  cpc:        { icon:IC.cpc,label:'CPC',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpc,cur) },
+  cpm:        { icon:IC.cpm,label:'CPM',          group:'Performance', default:true,  fn:(i,cur)=>fC(i.cpm,cur) },
   cpp:        { label:'CPP',          group:'Performance', default:false, fn:(i,cur)=>fC(i.cost_per_unique_click,cur) },
   // Conversões
-  purchases:  { icon:'🛒',label:'Compras',      group:'Conversões',  default:true,  fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='purchase')?.value) },
+  purchases:  { icon:IC.cart,label:'Compras',      group:'Conversões',  default:true,  fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='purchase')?.value) },
   purchase_val:{ icon:'💵',label:'Valor Compras',group:'Conversões', default:false, fn:(i,cur)=>fC((i.action_values||[]).find(a=>a.action_type==='purchase')?.value,cur) },
   leads:      { icon:'🧲',label:'Leads',        group:'Conversões',  default:false, fn:(i)=>fN((i.actions||[]).find(a=>a.action_type==='lead')?.value) },
   cost_per_purchase:{ icon:'🏷',label:'CPR',    group:'Conversões',  default:false, fn:(i,cur)=>fC((i.cost_per_action_type||[]).find(a=>a.action_type==='purchase')?.value,cur) },
-    roi:       { icon:'📈',label:'ROI',          group:'Conversões',    default:false, fn:(i,cur)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return fC(v-s,cur);} },
-  lucro:        { icon:'💹',label:'Lucro',         group:'Conversões',  default:true,  fn:(i,cur)=>{ const s=parseFloat(i.spend||0); const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0); const l=v-s; return (l>=0?'+':'')+fC(l,cur); } },
+    roi:       { icon:IC.roi,label:'ROI',          group:'Conversões',    default:false, fn:(i,cur)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return fC(v-s,cur);} },
+  lucro:        { icon:IC.profit,label:'Lucro',         group:'Conversões',  default:true,  fn:(i,cur)=>{ const s=parseFloat(i.spend||0); const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0); const l=v-s; return (l>=0?'+':'')+fC(l,cur); } },
   roas:       { label:'ROI',         group:'Conversões',  default:false, fn:(i)=>{const s=parseFloat(i.spend||0);const v=parseFloat((i.action_values||[]).find(a=>a.action_type==='purchase')?.value||0);return s>0?fD((v-s)/s)+'x':'—';} },
   // Alcance
   reach:      { icon:'🌐',label:'Alcance',      group:'Alcance',     default:false, fn:(i)=>fN(i.reach) },
