@@ -1371,7 +1371,7 @@ function renderSingleView(content, title, idx) {
           <div class="chart-title" id="chartLineTitle">Evolução diária</div>
           <div class="chart-legend">
             <div class="legend-item"><div class="legend-dot" style="background:#4f8ef7"></div>Investimento</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Cliques</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Vendas</div>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartLine"></canvas></div>
@@ -1522,7 +1522,7 @@ function buildLineChart(id, accs) {
     const acc=accs[0];
     const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
     datasets.push({icon:'💰',label:'Investimento',data:allDates.map(d=>parseFloat(byDate[d]?.spend||0)),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',tension:0.4,fill:true,yAxisID:'y'});
-    datasets.push({icon:'🖱',label:'Cliques',data:allDates.map(d=>parseInt(byDate[d]?.clicks||0)),borderColor:'#34d399',backgroundColor:'transparent',tension:0.4,borderDash:[4,4],yAxisID:'y2'});
+    datasets.push({icon:'✧',label:'Vendas',data:allDates.map(d=>parseFloat(byDate[d]?.revenue||0)),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.06)',tension:0.4,borderDash:[4,4],yAxisID:'y'});
   } else {
     accs.forEach(acc=>{
       const byDate=Object.fromEntries((acc.dailyData||[]).map(d=>[d.date_start,d]));
