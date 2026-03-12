@@ -3505,6 +3505,8 @@ if (_origRefresh) {
 // Rodar na primeira carga
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(highlightNegativeKpis, 1000);
+  var _v = new URLSearchParams(window.location.search).get('view');
+  if (_v) setTimeout(function(){ if(typeof switchView==='function') switchView(_v === 'vendas' ? 'vendas' : 'meta'); }, 900);
 });
 </script>
 
