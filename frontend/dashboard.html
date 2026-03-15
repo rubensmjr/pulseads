@@ -751,6 +751,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     .chart-header{padding:12px 16px 0;border-bottom:none}
     .chart-title{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3)}
 
+
+/* === SIDEBAR COLAPSAVEL === */
+.sidebar{position:fixed;top:0;left:0;height:100vh;z-index:200;transition:transform .25s ease,width .25s ease;overflow-y:auto;}
+.sidebar.collapsed{transform:translateX(-100%);}
+.main{transition:margin-left .25s ease;}
+.sidebar:not(.collapsed) + .main,.sidebar:not(.collapsed) ~ .main{margin-left:var(--sidebar-w);}
+.sidebar.collapsed + .main,.sidebar.collapsed ~ .main{margin-left:0;}
+#sb-toggle{position:fixed;top:50vh;z-index:300;transform:translateY(-50%);width:20px;height:44px;background:var(--surface2);border:1px solid var(--border);border-radius:0 8px 8px 0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:13px;transition:left .25s ease,background .2s,color .2s;}
+#sb-toggle:hover{background:var(--blue);color:#fff;}
 </style>
 </head>
 <body>
@@ -3492,5 +3501,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+
+
+<div id="sb-toggle" title="Menu">&#8943;</div>
+<script>
+(function(){
+  var sb=document.querySelector('.sidebar');
+  var btn=document.getElementById('sb-toggle');
+  var W='260px';
+  function sync(){
+    var col=sb.classList.contains('collapsed');
+    btn.style.left=col?'0':W;
+    btn.innerHTML=col?'&#8943;':'&#x2039;';
+    var main=document.querySelector('.main');
+    if(main) main.style.marginLeft=col?'0':W;
+  }
+  if(localStorage.getItem('sb')=='1') sb.classList.add('collapsed');
+  sync();
+  btn.addEventListener('click',function(){
+    sb.classList.toggle('collapsed');
+    localStorage.setItem('sb',sb.classList.contains('collapsed')?'1':'0');
+    sync();
+  });
+})();
+</script>
 </body>
 </html>
