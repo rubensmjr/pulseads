@@ -240,12 +240,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .topbar-right{display:flex;align-items:center;gap:8px}
 
 /* alert badge */
-.alert-badge{
-  position:relative;padding:7px 12px;border-radius:8px;border:1px solid var(--border);
-  background:transparent;color:var(--text2);font-family:var(--font);font-size:12px;
-  cursor:pointer;display:flex;align-items:center;gap:6px;transition:all var(--transition)
-}
-.alert-badge:hover{border-color:var(--amber);color:var(--amber)}
+
+
 .alert-count{
   position:absolute;top:-4px;right:-4px;
   width:16px;height:16px;border-radius:50%;background:var(--red);
@@ -834,15 +830,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 </div>
     <div class="topbar-right">
-      <button class="alert-badge" onclick="openAlertsModal()" id="alertBtn" title="Alertas">
-        ⚠️ Alertas
+      <button onclick="openAlertsModal()" id="alertBtn" title="Alertas" style="position:relative;background:none;border:1px solid var(--blue);color:var(--blue);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px">
+        Alertas
         <span class="alert-count" id="alertCount">0</span>
       </button>
       <div id="userInfo" style="display:flex;align-items:center;gap:8px;margin-right:4px">
 
 </div>
-      <button onclick="confirmClearHistory()" style="background:none;border:1px solid rgba(239,68,68,.4);color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer" onmouseover="this.style.background='rgba(239,68,68,.1)'" onmouseout="this.style.background='none'">🗑️ Limpar</button>
-      <button class="btn-icon btn-refresh" onclick="refreshWithFeedback(this)"><span class="refresh-icon">↻</span> Atualizar</button>
+      <button onclick="confirmClearHistory()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer">Limpar</button>
+      <button class="btn-icon btn-refresh" style="border:1px solid var(--blue);color:var(--blue);background:none;border-radius:8px;padding:5px 12px;font-size:12px" onclick="refreshWithFeedback(this)" style="border:1px solid var(--blue);color:var(--blue);background:none;border-radius:8px;padding:5px 12px;font-size:12px"><span class="refresh-icon">↻</span> Atualizar</button>
       <button class="btn-icon" onclick="logout()" style="color:var(--text3)">⎋ Sair</button>
       <div class="preset-wrap" id="presetWrap">
         <button class="btn-icon btn-preset" onclick="togglePresetMenu(event)" id="presetBtn">
@@ -956,7 +952,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 <!-- ══ ALERTS MODAL ═════════════════════════════════ -->
 <div class="overlay" id="alertsOverlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
-    <div class="modal-title">⚠️ Alertas de performance</div>
+    <div class="modal-title">⚠Alertas de performance</div>
     <div class="modal-sub" id="alertsModalSub">Itens que precisam de atenção.</div>
     <div class="alerts-modal-list" id="alertsModalList"></div>
     <div class="modal-actions" style="margin-top:16px">
@@ -1208,8 +1204,8 @@ function generateAlerts() {
   const cnt=document.getElementById('alertCount');
   const btn=document.getElementById('alertBtn');
   cnt.textContent=alerts.length;
-  if(alerts.length>0){cnt.classList.add('visible');btn.style.borderColor='var(--amber)';btn.style.color='var(--amber)';}
-  else{cnt.classList.remove('visible');btn.style.borderColor='';btn.style.color='';}
+  if(alerts.length>0){cnt.classList.add('visible');btn.style.borderColor='var(--blue)';btn.style.color='var(--blue)';}
+  else{cnt.classList.remove('visible');btn.style.borderColor='var(--blue)';btn.style.color='var(--blue)';}
 }
 
 function openAlertsModal() {
@@ -1790,17 +1786,7 @@ function kpi(icon,label,value,sub,color,dlt,prevVal) {
   </div>`;
 }
 
-function alertsBar(accs) {
-  const alerts=S.alerts.filter(a=>accs.some(acc=>acc.name===a.acc));
-  if(!alerts.length) return '';
-  return `<div class="alerts-panel has-alerts" style="margin-bottom:16px">
-    <div class="alerts-title">⚠️ Alertas (${alerts.length})</div>
-    <div class="alert-items">
-      ${alerts.slice(0,3).map(a=>`<div class="alert-item ${a.type}"><strong>${esc(a.acc)}:</strong> ${esc(a.msg)}</div>`).join('')}
-      ${alerts.length>3?`<div style="font-size:11px;color:var(--text3);padding:4px 12px">+${alerts.length-3} mais — veja todos nos alertas acima</div>`:''}
-    </div>
-  </div>`;
-}
+function alertsBar(accs){ return ""; }
 
 function compareBar() {
   return `<div class="compare-bar" style="margin-bottom:16px">
@@ -2255,8 +2241,6 @@ async function initDashboard() {
     const userInfoEl = document.getElementById('userInfo');
     if(userInfoEl) userInfoEl.innerHTML = `
       <span style="font-size:12px;color:var(--text2)">${esc(u.name)}</span>
-      <span style="font-size:10px;background:var(--blue-glow);color:var(--blue);padding:2px 8px;border-radius:100px;font-weight:600;text-transform:uppercase">${u.plan}</span>
-      ${u.role==='admin'?'<a href="/admin.html" style="font-size:11px;color:var(--amber);text-decoration:none;padding:4px 8px;border:1px solid rgba(251,191,36,0.3);border-radius:6px">Admin</a>':''}
     `;
     const accounts = await backendFetch('/accounts');
     S.accounts = accounts.map(a => ({
@@ -2765,7 +2749,7 @@ setTimeout(initAIKeyState, 500);
         Carregando dados...
       </div>
 
-      <button onclick="aiMessages=[];document.getElementById('aiPageMessages').innerHTML='';document.getElementById('aiChatMessages').innerHTML='';openAIPage();" style="margin-top:12px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer">🗑 Limpar conversa</button>
+      <button onclick="aiMessages=[];document.getElementById('aiPageMessages').innerHTML='';document.getElementById('aiChatMessages').innerHTML='';openAIPage();" style="margin-top:12px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer"> Limpar conversa</button>
     </div>
 
     <!-- Main chat -->
