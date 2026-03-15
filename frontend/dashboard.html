@@ -1501,18 +1501,18 @@ function renderSingleView(content, title, idx) {
         const KPI_MAP={
           spend: ()=>kpi(IC.spend,'Investimento',fCa(i.spend,acc),'Total no periodo','blue',delta(i.spend,pi.spend),fCa(pi.spend,acc)),
           impressions: ()=>kpi(IC.eye,'Impressoes',fN(i.impressions),'Alcance: '+fN(i.reach),'amber',delta(i.impressions,pi.impressions),fN(pi.impressions)),
-          clicks: ()=>kpi(IC.click,'Cliques',fN(i.clicks),'CTR: '+fP(i.ctr),'green',delta(i.clicks,pi.clicks),fN(pi.clicks)),
+          clicks: ()=>kpi(IC.click,'Cliques',fN(i.clicks),'CTR: '+fP(i.ctr),'blue',delta(i.clicks,pi.clicks),fN(pi.clicks)),
           cpm: ()=>kpi(IC.cpm,'CPM',fCa(i.cpm,acc),'Custo por mil impr.','blue',delta(i.cpm,pi.cpm,true),fCa(pi.cpm,acc)),
           cpc: ()=>kpi('💲','CPC',fCa(i.cpc,acc),'Custo por clique','amber',delta(i.cpc,pi.cpc,true),fCa(pi.cpc,acc)),
-          purchases: ()=>kpi(IC.target,'Conversoes',fN(conv),'Leads: '+fN(leads),'green',delta(conv,prevConv),'Prev: '+fN(prevConv)),
+          purchases: ()=>kpi(IC.target,'Conversoes',fN(conv),'Leads: '+fN(leads),'blue',delta(conv,prevConv),'Prev: '+fN(prevConv)),
           leads: ()=>kpi('📋','Leads',fN(leads),'Total de leads','green',delta(leads,prevLeads),'Prev: '+fN(prevLeads)),
             roi: ()=>kpi(IC.spend,'ROI',fCa(convValue-i.spend,acc),'Receita - Investimento',convValue-i.spend>=0?'green':'red',null,''),
-          lucro: ()=>{ const pv=parseFloat((i.action_values||[]).find(a=>a.action_type==="purchase")?.value||0); const sp=parseFloat(i.spend||0); const l=pv-sp; const cur=getCurrency(acc); return kpi("💰","Lucro",fC(l,cur),"Receita de compras − Investimento",l>=0?"green":"red",null,""); },
+          lucro: ()=>{ const pv=parseFloat((i.action_values||[]).find(a=>a.action_type==="purchase")?.value||0); const sp=parseFloat(i.spend||0); const l=pv-sp; const cur=getCurrency(acc); return kpi(IC.profit,"Lucro",fC(l,cur),"Receita de compras − Investimento",l>=0?"green":"red",null,""); },
           roas: ()=>kpi(IC.roi,'ROI',i.spend>0?(((convValue-i.spend)/i.spend).toFixed(2)+'x'):'—','Retorno sobre gasto','green',null,''),
           ctr: ()=>kpi(IC.target,'CTR',fP(i.ctr),'Taxa de cliques','amber',delta(i.ctr,pi.ctr),fP(pi.ctr)),
           reach: ()=>kpi(IC.users,'Alcance',fN(i.reach),'Pessoas unicas','blue',delta(i.reach,pi.reach),fN(pi.reach)),
           frequency: ()=>kpi('🔁','Frequencia',(+i.frequency||0).toFixed(2),'Impressoes por pessoa','amber',null,''),
-          purchase_val: ()=>kpi(IC.cart,'Valor Compras',fCa((i.action_values||[]).find(a=>a.action_type=='purchase')?.value,acc),'Receita de compras','green',null,''),
+          purchase_val: ()=>kpi(IC.cart,'Valor Compras',fCa((i.action_values||[]).find(a=>a.action_type=='purchase')?.value,acc),'Receita de compras','blue',null,''),
           cost_per_purchase: ()=>kpi('💸','CPR',fCa((i.cost_per_action_type||[]).find(a=>a.action_type=='purchase')?.value,acc),'Custo por resultado','amber',null,''),
         };
         return ACTIVE_COLS.filter(k=>KPI_MAP[k]).map(k=>KPI_MAP[k]()).join('');
@@ -1876,6 +1876,16 @@ function aggregateAccounts(accs) {
 }
 
 function kpi(icon,label,value,sub,color,dlt,prevVal) {
+    /* Dynamic color for Lucro, ROI, ROAS */
+    var dynLabels = ['Lucro','ROI','ROAS'];
+    if (dynLabels.indexOf(label) >= 0) {
+      var numVal = parseFloat(String(value).replace(/[^\d.\-]/g,''));
+      if (isNaN(numVal) || numVal === 0) { color = 'blue'; }
+      else if (numVal < 0) { color = 'red'; }
+      else { color = 'green'; }
+    }
+    /* White border-top for non-colored cards */
+    if (!color || color === 'white') { color = 'blue'; }
   let deltaHtml='';
   if(dlt!==null&&dlt!==undefined){
     const n=parseFloat(dlt);
