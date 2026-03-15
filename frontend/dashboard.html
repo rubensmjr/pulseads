@@ -224,6 +224,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   font-size: 14px; vertical-align: middle;
 }
 
+
+/* topbar period pills */
+.topbar-periods{display:flex;align-items:center;gap:3px;margin-left:12px;}
+.topbar-periods .period-pill{padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s ease;}
+.topbar-periods .period-pill:hover{color:var(--text);border-color:var(--text3);}
+.topbar-periods .period-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.topbar-compare{display:flex;align-items:center;gap:3px;margin-left:8px;padding-left:8px;border-left:1px solid var(--border);}
+.topbar-compare .compare-chip{padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;transition:all .15s ease;}
+.topbar-compare .compare-chip:hover{color:var(--text2);border-color:var(--text3);}
+.topbar-compare .compare-chip.active{background:var(--surface2);color:var(--text);border-color:var(--text3);}
+.topbar-compare .cmp-label{font-size:10px;color:var(--text3);white-space:nowrap;}
+
 /* topbar */
 .topbar{
   height:var(--topbar-h);background:rgba(14,15,20,0.85);backdrop-filter:blur(16px);
@@ -555,7 +567,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 @media(max-width:768px){
   body{font-size:13px}
   .sidebar{display:none!important}
-  .topbar{padding:8px 12px!important;flex-wrap:wrap;gap:6px}
+  .topbar{padding:6px 12px!important;flex-wrap:wrap;gap:4px}
   .topbar-right{flex-wrap:wrap;gap:4px}
   .main-content{margin-left:0!important;padding:10px!important}
   .view-tabs{overflow-x:auto;flex-wrap:nowrap!important}
@@ -858,28 +870,6 @@ a.sb-item.active { color: var(--text2) !important; background: rgba(79,142,247,0
     <div class="spend-banner-sub" id="spendBannerSub">0 contas</div>
   </div>
 
-  <!-- period -->
-  <div class="nav-section">
-    <div class="nav-label">Período</div>
-    <div class="period-pills">
-      <button class="period-pill active" data-period="today">Hoje</button>
-      <button class="period-pill" data-period="yesterday">Ontem</button>
-      <button class="period-pill" data-period="last_7d">7 dias</button>
-      <button class="period-pill" data-period="last_14d">14 dias</button>
-      <button class="period-pill" data-period="last_30d">30 dias</button>
-      <button class="period-pill" data-period="this_month">Este mês</button>
-      <button class="period-pill" data-period="last_month">Mês ant.</button>
-      <button class="period-pill" data-period="custom">Personalizado</button>
-    </div>
-    <div class="custom-range" id="customRange">
-      <div class="date-row">
-        <input type="date" class="date-inp" id="dateFrom" />
-        <input type="date" class="date-inp" id="dateTo" />
-      </div>
-      <button class="btn-apply" onclick="applyCustomDate()">Aplicar período</button>
-    </div>
-  </div>
-
   <!-- manager filter -->
   <div class="manager-section" id="managerSection" style="display:none">
     <div class="nav-label" style="padding:0 2px;margin-bottom:6px">Gestores</div>
@@ -908,6 +898,21 @@ a.sb-item.active { color: var(--text2) !important; background: rgba(79,142,247,0
     <div class="topbar-left">
       <div class="topbar-title" id="topbarTitle">Dashboard</div>
       <div class="topbar-period" id="topbarPeriod">Hoje</div>
+      </div>
+      <div class="topbar-periods" id="topbarPeriods">
+        <button class="period-pill active" data-period="today">Hoje</button>
+        <button class="period-pill" data-period="yesterday">Ontem</button>
+        <button class="period-pill" data-period="last_7d">7d</button>
+        <button class="period-pill" data-period="last_14d">14d</button>
+        <button class="period-pill" data-period="last_30d">30d</button>
+        <button class="period-pill" data-period="this_month">Mes</button>
+        <button class="period-pill" data-period="last_month">Ant.</button>
+        <button class="period-pill" data-period="custom">Custom</button>
+      </div>
+      <div class="topbar-compare" id="topbarCompare">
+        <span class="cmp-label">vs</span>
+        <button class="compare-chip" onclick="toggleCompare('prev_period')">Per. ant.</button>
+        <button class="compare-chip active" onclick="toggleCompare(null)">Sem comp.</button>
       </div>
       <div class="view-tabs" id="viewTabs">
         <button class="view-tab active" onclick="switchView('meta')" id="tab-meta">📊 Meta Ads</button>
@@ -3581,6 +3586,32 @@ if (_origRefresh) {
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(highlightNegativeKpis, 1000);
 });
+
+// Topbar period pills click
+document.querySelectorAll('.topbar-periods .period-pill').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var p = this.getAttribute('data-period');
+    // sync sidebar pills too
+    document.querySelectorAll('.period-pill').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.period-pill[data-period="'+p+'"]').forEach(function(b){b.classList.add('active');});
+    if(p==='custom'){
+      var cr=document.getElementById('customRange');
+      if(cr)cr.style.display='block';
+      return;
+    }
+    var cr2=document.getElementById('customRange');
+    if(cr2)cr2.style.display='none';
+    setPeriod(p);
+  });
+});
+// Topbar compare chips click  
+document.querySelectorAll('.topbar-compare .compare-chip').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.topbar-compare .compare-chip').forEach(function(b){b.classList.remove('active');});
+    this.classList.add('active');
+  });
+});
+
 </script>
 
 
