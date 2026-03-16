@@ -241,6 +241,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .top-filter-bar .btn-add-acc:hover{border-color:var(--blue);color:var(--text);}
 .top-filter-bar #accList{display:flex;gap:4px;align-items:center;}
 
+
+.kpi-cards{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding-bottom:6px;}
+.kpi-cards::-webkit-scrollbar{height:6px;}
+.kpi-cards::-webkit-scrollbar-track{background:var(--surface);border-radius:3px;}
+.kpi-cards::-webkit-scrollbar-thumb{background:var(--text3);border-radius:3px;}
+.kpi-cards::-webkit-scrollbar-thumb:hover{background:var(--text2);}
+.kpi-cards .kpi-card{min-width:160px;flex-shrink:0;}
+
 /* topbar period pills */
 .topbar-periods{display:flex;align-items:center;gap:3px;margin-left:12px;}
 .topbar-periods .period-pill{padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s ease;}
@@ -1238,7 +1246,7 @@ async function connectAccount() {
     const data = await result.json();
     if(!result.ok) throw new Error(data.error);
     S.accounts.push({id:data.id, name:data.name, manager:data.manager||'', accId:data.account_id, color:data.color||S.color, currency:data.currency||'USD', status:'loading', insights:null, prevInsights:null, campaigns:null, adsets:null, dailyData:null, hourlyData:null, error:''});
-    if(S.active===null) S.active=0;
+    if(S.active===null){var _sa2=localStorage.getItem('pa_activeAcc');S.active=_sa2!==null?JSON.parse(_sa2):0;}
     closeModal(); updateManagerDL(); renderSidebar();
     await loadAccountData(S.accounts.length-1);
     renderSidebar();  renderMain();
@@ -1452,7 +1460,7 @@ function renderManagerList(filter='') {
     </div>`).join('');
 }
 
-function setActive(v) { S.active=v; renderSidebar(); renderMain(); }
+function setActive(v) { S.active=v; localStorage.setItem('pa_activeAcc',JSON.stringify(v)); renderSidebar(); renderMain(); }
 function removeAcc(idx,e) {
   e.stopPropagation();
   const acc=S.accounts[idx];
@@ -2364,7 +2372,7 @@ async function initDashboard() {
       accId: a.account_id, color: a.color, currency: a.currency||'USD',
       status: 'loading', insights:null, prevInsights:null, campaigns:null, adsets:null, dailyData:null, error:''
     }));
-    if(S.accounts.length>0) S.active=0;
+    if(S.accounts.length>0){var _sa=localStorage.getItem('pa_activeAcc');S.active=_sa!==null?JSON.parse(_sa):0;if(typeof S.active==='number'&&S.active>=S.accounts.length)S.active=0;}
     renderSidebar(); renderMain();
     await loadAll();
   } catch(e) {
@@ -3603,40 +3611,7 @@ if (_origRefresh) {
   };
 }
 // Rodar na primeira carga
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(highlightNegativeKpis, 1000);
-});
-
-// Topbar period pills click
-document.querySelectorAll('.topbar-periods .period-pill').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    var p = this.getAttribute('data-period');
-    // sync sidebar pills too
-    document.querySelectorAll('.period-pill').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('.period-pill[data-period="'+p+'"]').forEach(function(b){b.classList.add('active');});
-    if(p==='custom'){
-      var cr=document.getElementById('customRange');
-      if(cr)cr.style.display='block';
-      return;
-    }
-    var cr2=document.getElementById('customRange');
-    if(cr2)cr2.style.display='none';
-    setPeriod(p);
-  });
-});
-// Topbar compare chips click  
-document.querySelectorAll('.topbar-compare .compare-chip').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('.topbar-compare .compare-chip').forEach(function(b){b.classList.remove('active');});
-    this.classList.add('active');
-  });
-});
-
+initDashboard();
 </script>
-
-
-
-
-
 </body>
 </html>
