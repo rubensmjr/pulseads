@@ -868,7 +868,7 @@ a.sb-item.active { color: var(--text2) !important; background: rgba(79,142,247,0
 <!-- ══ SIDEBAR ══════════════════════════════════════ -->
 <aside class="sidebar">
   <div class="sidebar-logo" style="padding:14px 16px;border-bottom:1px solid var(--border)">
-  <img src="/hotfylog.png" alt="Hotfy" style="width:26px;height:26px;object-fit:contain;flex-shrink:0;margin:0 15px;"><span class="sidebar-logo-name">Hotfy</span>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text);margin:0 auto;"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 </div>
 <nav class="sb-nav">
   <a class="sb-item active" id="sb-meta" onclick="switchView('meta');return false;" href="#">
@@ -896,8 +896,9 @@ a.sb-item.active { color: var(--text2) !important; background: rgba(79,142,247,0
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <div class="topbar-title" id="topbarTitle">Dashboard</div>
-      <div class="topbar-period" id="topbarPeriod">Hoje</div>
+      <div id="topbarTitle" style="display:none">Dashboard</div>
+      <div id="topbarPeriod" style="display:none">Hoje</div>
+      <img src="/hotfylog.png" alt="Hotfy" style="height:28px;width:auto;object-fit:contain;">
       </div>
       <div class="topbar-periods" id="topbarPeriods">
         <button class="period-pill active" data-period="today">Hoje</button>
