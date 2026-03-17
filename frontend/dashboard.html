@@ -239,7 +239,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .top-filter-bar .accounts-section .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:0;}
 .top-filter-bar .btn-add-acc{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px;}
 .top-filter-bar .btn-add-acc:hover{border-color:var(--blue);color:var(--text);}
-.top-filter-bar #accList{display:flex;gap:4px;align-items:center;}
+.top-filter-bar #accList{display:flex;gap:4px;align-items:center;}.top-filter-bar .acc-item{flex-direction:row!important;align-items:center!important;padding:4px 8px!important;gap:6px!important;height:auto!important;}.top-filter-bar .acc-info{display:flex!important;flex-direction:row!important;align-items:center!important;gap:4px;}.top-filter-bar .acc-name{font-size:11px!important;}.top-filter-bar .acc-sub{font-size:9px!important;color:var(--text3)!important;}.top-filter-bar .acc-avatar{width:22px!important;height:22px!important;font-size:10px!important;}
 
 
 .kpi-cards{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding-bottom:6px;}
@@ -1424,10 +1424,8 @@ function renderSidebar() {
   S.accounts.forEach((acc,idx)=>{
     const dc=acc.status==='ok'?'':'acc-dot '+(acc.status==='loading'?'loading':'error');
     html+=`<div class="acc-item ${S.active===idx?'active':''}" onclick="setActive(${idx})">
-      <div class="acc-avatar" style="background:${acc.color}">${initials(acc.name)}</div>
       <div class="acc-info">
         <div class="acc-name">${esc(acc.name)}</div>
-        <div class="acc-sub">${acc.manager?'👤 '+esc(acc.manager):esc(acc.accId)}</div>
       </div>
       <div class="acc-dot ${acc.status==='ok'?'':acc.status==='loading'?'loading':'error'}"></div>
       <button class="acc-remove" onclick="removeAcc(${idx},event)" title="Remover">✕</button>
