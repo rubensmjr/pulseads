@@ -11,6 +11,7 @@ if (/Mobile|Android|iPhone|iPad|Tablet|iPod/i.test(navigator.userAgent)) {
 <title>Hotfy — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="/worldmap.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
@@ -388,6 +389,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .donut-val{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)}
 .donut-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
 
+/* WORLD SALES MAP */
+.world-map-wrap{position:relative;height:240px;background:var(--bg);border-radius:8px;overflow:hidden}
 /* TABLE CARD */
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
 .table-header{
@@ -1537,11 +1540,8 @@ function renderSingleView(content, title, idx) {
         <div class="chart-wrap"><canvas id="chartLine"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Status campanhas</div></div>
-        <div class="chart-wrap" style="height:180px">
-          <canvas id="chartDonut"></canvas>
-          <div class="donut-center"><div class="donut-val" id="donutVal">-</div><div class="donut-lbl">Campanhas</div></div>
-        </div>
+        <div class="chart-header"><div class="chart-title">Vendas globais</div></div>
+        <div class="world-map-wrap" id="worldMapSingle"></div>
       </div>
     </div>
     ${tabsTable(acc.campaigns,acc.adsets,acc.ads||[],'tbl_'+idx,acc.currency,idx)}
@@ -1550,7 +1550,7 @@ function renderSingleView(content, title, idx) {
   setTimeout(()=>{
     if(S.period==='today') buildHourlyLineChart('chartLine',acc);
     else buildLineChart('chartLine',[acc]);
-    buildDonutChart('chartDonut',acc.campaigns||[]);
+    if(typeof _wmBuildMap==='function') _wmBuildMap('worldMapSingle');
   }, 50);
 }
 
@@ -1586,11 +1586,8 @@ function renderAllView(content, title) {
         <div class="chart-wrap"><canvas id="chartLineAll"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Distribuição de gasto</div></div>
-        <div class="chart-wrap" style="height:180px">
-          <canvas id="chartDonutAll"></canvas>
-          <div class="donut-center"><div class="donut-val">${fC(totals.spend,accs.find(a=>a.status==='ok')?.currency)}</div><div class="donut-lbl">Total</div></div>
-        </div>
+        <div class="chart-header"><div class="chart-title">Vendas globais</div></div>
+        <div class="world-map-wrap" id="worldMapAll"></div>
       </div>
     </div>
     <div style="margin-bottom:20px">
@@ -1603,7 +1600,7 @@ function renderAllView(content, title) {
   requestAnimationFrame(()=>{
     if(S.period==='today') buildHourlyLineChartMulti('chartLineAll',accs);
     else buildLineChart('chartLineAll',accs);
-    buildDonutAllChart('chartDonutAll',accs);
+    if(typeof _wmBuildMap==='function') _wmBuildMap('worldMapAll');
   });
 }
 
@@ -1645,11 +1642,8 @@ function renderManagerView(content, title, managerName) {
         <div class="chart-wrap"><canvas id="chartMgr"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Distribuição de gasto</div></div>
-        <div class="chart-wrap" style="height:180px">
-          <canvas id="chartMgrDonut"></canvas>
-          <div class="donut-center"><div class="donut-val">${fC(totals.spend,accs.find(a=>a.status==='ok')?.currency)}</div><div class="donut-lbl">Total gestor</div></div>
-        </div>
+        <div class="chart-header"><div class="chart-title">Vendas globais</div></div>
+        <div class="world-map-wrap" id="worldMapMgr"></div>
       </div>
     </div>
     <div style="margin-bottom:20px">
@@ -1662,7 +1656,7 @@ function renderManagerView(content, title, managerName) {
   requestAnimationFrame(()=>{
     if(S.period==='today') buildHourlyLineChartMulti('chartMgr',accs);
   else buildLineChart('chartMgr',accs);
-    buildDonutAllChart('chartMgrDonut',accs);
+    if(typeof _wmBuildMap==='function') _wmBuildMap('worldMapMgr');
   });
 }
 
