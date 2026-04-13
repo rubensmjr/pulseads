@@ -2,91 +2,240 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hotfy — Funil de Vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e2a;
-  --border:#232736;--text:#e8eaf0;--text2:#8b92a8;--text3:#555e7a;
-  --accent:#7c6aff;--green:#22d3a0;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+:root {
+  --bg:     #0d0e1a;
+  --bg2:    #10111f;
+  --surface:#151626;
+  --surface2:#1c1e30;
+  --border: rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --text:   #e2e4f0;
+  --text2:  #7b7e9e;
+  --text3:  #3e4060;
+  --blue:   #4f8ef7;
+  --green:  #34d399;
+  --yellow: #fbbf24;
+  --accent: #a78bfa;
+  --red:    #f87171;
+  --radius: 10px;
+  --font:   'Inter', sans-serif;
 }
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
 
-/* TOP BAR */
-.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100}
-.topbar-logo{font-size:15px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
-.topbar-nav{display:flex;gap:8px}
-.topbar-nav a{padding:6px 14px;border-radius:8px;font-size:13px;text-decoration:none;color:var(--text2);transition:.2s}
-.topbar-nav a:hover{background:rgba(124,106,255,.1);color:var(--text)}
-.topbar-nav a.active{background:var(--accent);color:#fff}
-.topbar-right{display:flex;align-items:center;gap:8px}
+/* ── TOPBAR ── */
+.topbar {
+  height: 48px; display: flex; align-items: center;
+  padding: 0 18px; background: var(--bg2);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; flex: 1; }
+.topbar-center { display: flex; align-items: center; gap: 4px; position: absolute; left: 50%; transform: translateX(-50%); }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+.logo { font-weight: 700; font-size: 14px; color: var(--blue); letter-spacing: -0.3px; }
+.nav-link {
+  font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 6px;
+  text-decoration: none; color: var(--text2); display: inline-flex; align-items: center; gap: 5px;
+  transition: all .15s; border: 1px solid transparent;
+}
+.nav-link:hover { color: var(--text); background: var(--surface); }
+.nav-link.active { color: var(--text); background: var(--surface2); border-color: var(--border2); }
+.btn-sm {
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: transparent; color: var(--text2);
+  cursor: pointer; transition: all .15s;
+}
+.btn-sm:hover { color: var(--text); border-color: var(--border2); background: var(--surface); }
 
-/* FILTROS */
-.filters{display:flex;gap:8px;padding:16px 24px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);background:var(--bg2)}
-.period-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:.2s}
-.period-pill:hover{border-color:var(--accent);color:var(--text)}
-.period-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+/* ── PERIOD BAR ── */
+.period-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 18px; border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.period-pill {
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent; color: var(--text3);
+  cursor: pointer; transition: all .15s;
+}
+.period-pill:hover { color: var(--text2); border-color: var(--border2); }
+.period-pill.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.last-update { font-size: 10px; color: var(--text3); margin-left: auto; }
 
-/* MAIN LAYOUT */
-.main{display:grid;grid-template-columns:1fr 380px;gap:20px;padding:24px;max-width:1400px;margin:0 auto}
-@media(max-width:900px){.main{grid-template-columns:1fr}}
+/* ── MAIN ── */
+.main { padding: 24px 20px; max-width: 1200px; margin: 0 auto; }
 
-/* FUNIL GEOMÉTRICO */
-.funil-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px}
-.funil-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:24px;display:flex;align-items:center;gap:8px}
-.funil-svg-wrap{display:flex;justify-content:center;margin-bottom:32px}
-.funil-steps{display:flex;flex-direction:column;gap:0}
-.funil-step{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
-.funil-step:last-child{border-bottom:none}
-.funil-step-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.funil-step-info{flex:1}
-.funil-step-label{font-size:12px;color:var(--text2);margin-bottom:2px}
-.funil-step-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
-.funil-step-bar-wrap{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:6px}
-.funil-step-bar{height:100%;border-radius:3px;transition:width 1s ease}
-.funil-step-pct{font-size:11px;color:var(--text2);font-weight:500;flex-shrink:0;text-align:right;min-width:50px}
-.arrow-down{display:flex;justify-content:center;align-items:center;height:20px;color:var(--text3);font-size:14px}
+/* ── PAGE FLOW ── */
+.flow-wrapper {
+  display: flex; align-items: flex-start; gap: 0;
+  justify-content: center; overflow-x: auto; padding-bottom: 8px;
+}
 
-/* LADO DIREITO */
-.right-col{display:flex;flex-direction:column;gap:16px}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px}
-.card-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:16px}
-.conv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.conv-label{font-size:13px;color:var(--text2)}
-.conv-val{font-size:14px;font-weight:700}
-.conv-bar-wrap{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:16px;margin-top:-8px}
-.conv-bar{height:100%;border-radius:2px;transition:width 1s ease}
+/* ── FLOW STEP ── */
+.flow-step { display: flex; flex-direction: column; align-items: center; min-width: 200px; }
 
-/* CAMPANHAS */
-.camp-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.camp-row:last-child{border-bottom:none}
-.camp-name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.camp-badge{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(124,106,255,.15);color:var(--accent);font-weight:600}
-.roas-badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
+/* Metric badge above card */
+.flow-metric {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  margin-bottom: 14px; min-height: 52px; justify-content: flex-end;
+}
+.flow-metric-val {
+  font-size: 26px; font-weight: 700; letter-spacing: -1px; color: var(--text);
+  line-height: 1;
+}
+.flow-metric-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px;
+  color: var(--text3);
+}
+.flow-metric-sub {
+  font-size: 10px; color: var(--text2); margin-top: 1px;
+}
 
-/* KPI MINI */
-.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.kpi-mini{background:var(--bg3);border-radius:12px;padding:12px}
-.kpi-mini-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.kpi-mini-val{font-size:18px;font-weight:800}
+/* Page card (browser mockup) */
+.page-card {
+  width: 180px; border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  background: var(--surface); overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  transition: transform .2s, box-shadow .2s;
+  cursor: default;
+}
+.page-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 36px rgba(0,0,0,0.45);
+}
+
+/* Browser chrome */
+.browser-bar {
+  height: 22px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 8px; gap: 4px;
+}
+.browser-dot { width: 6px; height: 6px; border-radius: 50%; }
+.browser-url {
+  flex: 1; height: 10px; background: var(--bg3, #0a0b16);
+  border-radius: 3px; margin-left: 4px; font-size: 0;
+  background: rgba(255,255,255,0.06);
+}
+
+/* Page content mockup */
+.page-body { padding: 10px; min-height: 120px; position: relative; }
+.page-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text3); margin-bottom: 8px;
+}
+/* Skeleton lines */
+.sk { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.07); margin-bottom: 5px; }
+.sk.w100 { width: 100%; }
+.sk.w80  { width: 80%; }
+.sk.w60  { width: 60%; }
+.sk.w40  { width: 40%; }
+.sk.cta  {
+  height: 20px; border-radius: 5px; margin-top: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
+}
+.sk.hero { height: 42px; border-radius: 6px; margin-bottom: 8px; }
+
+/* Step label below card */
+.step-name {
+  margin-top: 10px; font-size: 11px; font-weight: 700; color: var(--text2);
+  letter-spacing: 0.2px;
+}
+.step-url { font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+/* ── CONNECTOR (seta entre etapas) ── */
+.flow-connector {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; padding-bottom: 56px; /* alinha com meio do card */
+  min-width: 64px; gap: 6px;
+}
+.conv-pct {
+  font-size: 11px; font-weight: 700; color: var(--text2);
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 20px; white-space: nowrap;
+}
+.conv-arrow {
+  display: flex; align-items: center; width: 48px;
+}
+.conv-arrow svg { width: 48px; opacity: 0.35; }
+
+/* Color accent on card top */
+.page-card.blue   { border-top: 2px solid var(--blue); }
+.page-card.purple { border-top: 2px solid var(--accent); }
+.page-card.yellow { border-top: 2px solid var(--yellow); }
+.page-card.green  { border-top: 2px solid var(--green); }
+
+.flow-metric-val.blue   { color: var(--blue); }
+.flow-metric-val.purple { color: var(--accent); }
+.flow-metric-val.yellow { color: var(--yellow); }
+.flow-metric-val.green  { color: var(--green); }
+
+/* ── BOTTOM ROW ── */
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+.bottom-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.bottom-card-title {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text3); margin-bottom: 14px;
+}
+
+/* KPI summary grid */
+.kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kpi-item {}
+.kpi-item-label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+.kpi-item-val { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+
+/* Conversion rates */
+.conv-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.conv-label { font-size: 11px; color: var(--text2); }
+.conv-val { font-size: 12px; font-weight: 700; }
+.conv-bar-wrap { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-bottom: 10px; }
+.conv-bar { height: 100%; border-radius: 2px; transition: width .6s ease; }
+
+/* Campaign table */
+.camp-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.camp-row:last-child { border-bottom: none; }
+.camp-name { font-size: 11px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.camp-badge { font-size: 9px; font-weight: 700; background: var(--surface2); color: var(--text3); padding: 2px 7px; border-radius: 4px; }
+
+/* install hint */
+.install-hint { font-size: 11px; color: var(--text3); line-height: 1.7; }
+.install-hint code { font-size: 10px; color: var(--accent); background: var(--surface2); padding: 3px 7px; border-radius: 4px; display: block; margin-top: 6px; }
 
 /* LOGIN */
-#loginWrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
-.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:40px;width:320px;text-align:center}
-.login-box h2{font-size:22px;font-weight:800;margin-bottom:6px}
-.login-box p{color:var(--text2);font-size:13px;margin-bottom:24px}
-.inp{width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;outline:none}
-.inp:focus{border-color:var(--accent)}
-.btn-primary{width:100%;padding:11px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
-.btn-primary:hover{opacity:.9}
-.err{color:var(--red);font-size:12px;margin-top:8px}
+#loginWrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 14px;
+  padding: 32px; width: 340px; box-shadow: 0 16px 60px rgba(0,0,0,0.5);
+}
+.login-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 5px; display: block; }
+.form-input {
+  width: 100%; padding: 9px 12px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 7px; color: var(--text); font-size: 13px; outline: none;
+  transition: border-color .15s;
+}
+.form-input:focus { border-color: var(--blue); }
+.btn-login {
+  width: 100%; padding: 10px; background: var(--blue); border: none; border-radius: 7px;
+  color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 4px;
+  transition: opacity .15s;
+}
+.btn-login:hover { opacity: 0.88; }
+.login-err { color: var(--red); font-size: 11px; margin-top: 8px; }
 
-.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
-
-/* FUNIL SVG */
-.funil-geometric{width:100%;max-width:400px}
+#appWrap { display: none; }
 </style>
 </head>
 <body>
@@ -94,163 +243,247 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 <!-- LOGIN -->
 <div id="loginWrap">
   <div class="login-box">
-    <div style="font-size:40px;margin-bottom:12px">⚡</div>
-    <h2>Hotfy</h2>
-    <p>Acesse seu funil de vendas</p>
-    <input class="inp" type="email" id="loginEmail" placeholder="E-mail" />
-    <input class="inp" type="password" id="loginPass" placeholder="Senha" onkeydown="if(event.key==='Enter')doLogin()" />
-    <button class="btn-primary" onclick="doLogin()">Entrar</button>
-    <div class="err" id="loginErr"></div>
+    <div class="login-title">⚡ Hotfy</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:20px;">Acesse seu funil de vendas</p>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="text" inputmode="email" id="loginEmail" placeholder="seu@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" type="password" id="loginPass" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="loginErr"></div>
   </div>
 </div>
 
 <!-- APP -->
-<div id="appWrap" style="display:none">
+<div id="appWrap">
 
-  <div class="topbar">
-    <div class="topbar-logo">⚡ Hotfy</div>
-    <div class="topbar-nav">
-      <a href="/dashboard" id="navMeta">📊 Meta Ads</a>
-      <a href="/dashboard.html?view=vendas" id="navVendas">🛒 Vendas</a>
-      <a href="/funil.html" class="active" id="navFunil">🎯 Funil</a>
+  <!-- TOPBAR -->
+  <div class="topbar" style="position:relative;">
+    <div class="topbar-left">
+      <span class="logo">⚡ Hotfy</span>
+    </div>
+    <div class="topbar-center">
+      <a href="/dashboard.html?view=metaads" class="nav-link">📊 Meta Ads</a>
+      <a href="/dashboard.html?view=vendas"  class="nav-link">🛒 Vendas</a>
+      <a href="/funil.html" class="nav-link active">🎯 Funil</a>
     </div>
     <div class="topbar-right">
-      <span class="pulse"></span>
-      <span style="font-size:12px;color:var(--text2)" id="topUser"></span>
-      <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer">Sair</button>
+      <span style="font-size:11px;color:var(--text3);" id="topUser"></span>
+      <button class="btn-sm" onclick="logout()">Sair</button>
     </div>
   </div>
 
-  <div class="filters">
+  <!-- PERIOD BAR -->
+  <div class="period-bar">
     <button class="period-pill active" data-p="today">Hoje</button>
     <button class="period-pill" data-p="yesterday">Ontem</button>
-    <button class="period-pill" data-p="last_7d">7 dias</button>
-    <button class="period-pill" data-p="last_14d">14 dias</button>
-    <button class="period-pill" data-p="last_30d">30 dias</button>
-    <button class="period-pill" data-p="this_month">Este mês</button>
-    <span style="margin-left:auto;font-size:12px;color:var(--text3)" id="lastUpdate"></span>
+    <button class="period-pill" data-p="7d">7 dias</button>
+    <button class="period-pill" data-p="14d">14 dias</button>
+    <button class="period-pill" data-p="30d">30 dias</button>
+    <button class="period-pill" data-p="month">Este mês</button>
+    <span class="last-update" id="lastUpdate"></span>
   </div>
 
+  <!-- MAIN -->
   <div class="main">
 
-    <!-- FUNIL GEOMÉTRICO -->
-    <div class="funil-wrap">
-      <div class="funil-title">🎯 Funil de conversão</div>
+    <!-- PAGE FLOW -->
+    <div class="flow-wrapper">
 
-      <!-- SVG GEOMÉTRICO -->
-      <div class="funil-svg-wrap">
-        <svg class="funil-geometric" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:.9"/>
-              <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:.9"/>
-            </linearGradient>
-            <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:#7c6aff;stop-opacity:.9"/>
-              <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:.9"/>
-            </linearGradient>
-            <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:.9"/>
-              <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:.9"/>
-            </linearGradient>
-            <linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:#22d3a0;stop-opacity:.9"/>
-              <stop offset="100%" style="stop-color:#34d399;stop-opacity:.9"/>
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-
-          <!-- NÍVEL 1: VISITAS (topo largo) -->
-          <polygon id="svgN1" points="20,10 380,10 350,74 50,74" fill="url(#g1)" opacity="1"/>
-          <text x="200" y="36" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">👁️ VISITAS</text>
-          <text id="svgV1" x="200" y="56" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
-
-          <!-- SETA 1 -->
-          <text x="200" y="88" text-anchor="middle" fill="#555e7a" font-size="14">▼</text>
-          <text id="svgP1" x="340" y="88" text-anchor="middle" fill="#8b92a8" font-size="10">—</text>
-
-          <!-- NÍVEL 2: LEADS -->
-          <polygon id="svgN2" points="50,95 350,95 320,159 80,159" fill="url(#g2)" opacity="1"/>
-          <text x="200" y="122" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">📧 LEADS</text>
-          <text id="svgV2" x="200" y="142" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
-
-          <!-- SETA 2 -->
-          <text x="200" y="173" text-anchor="middle" fill="#555e7a" font-size="14">▼</text>
-          <text id="svgP2" x="340" y="173" text-anchor="middle" fill="#8b92a8" font-size="10">—</text>
-
-          <!-- NÍVEL 3: CLIQUES CTA -->
-          <polygon id="svgN3" points="80,180 320,180 290,244 110,244" fill="url(#g3)" opacity="1"/>
-          <text x="200" y="207" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">🖱️ CLIQUES CTA</text>
-          <text id="svgV3" x="200" y="227" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
-
-          <!-- SETA 3 -->
-          <text x="200" y="258" text-anchor="middle" fill="#555e7a" font-size="14">▼</text>
-          <text id="svgP3" x="340" y="258" text-anchor="middle" fill="#8b92a8" font-size="10">—</text>
-
-          <!-- NÍVEL 4: VENDAS (fundo estreito) -->
-          <polygon id="svgN4" points="110,265 290,265 260,310 140,310" fill="url(#g4)" opacity="1" filter="url(#glow)"/>
-          <text x="200" y="285" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity=".9">💰 VENDAS</text>
-          <text id="svgV4" x="200" y="305" text-anchor="middle" fill="white" font-size="18" font-weight="800">—</text>
-        </svg>
+      <!-- STEP 1: Landing Page -->
+      <div class="flow-step">
+        <div class="flow-metric">
+          <div class="flow-metric-val blue" id="fVal1">—</div>
+          <div class="flow-metric-label">Visitas</div>
+          <div class="flow-metric-sub" id="fSub1"></div>
+        </div>
+        <div class="page-card blue">
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#ff5f57"></div>
+            <div class="browser-dot" style="background:#febc2e"></div>
+            <div class="browser-dot" style="background:#28c840"></div>
+            <div class="browser-url"></div>
+          </div>
+          <div class="page-body">
+            <div class="page-label">Landing Page</div>
+            <div class="sk hero" style="background:rgba(79,142,247,0.15)"></div>
+            <div class="sk w100"></div>
+            <div class="sk w80"></div>
+            <div class="sk w60"></div>
+            <div class="sk cta" style="background:rgba(79,142,247,0.25);color:var(--blue)">SAIBA MAIS ▶</div>
+          </div>
+        </div>
+        <div class="step-name">Landing Page</div>
+        <div class="step-url">hotfy.digital/lp</div>
       </div>
 
-      <!-- DETALHES DOS STEPS -->
-      <div class="funil-steps" id="funilSteps">
-        <!-- preenchido por JS -->
+      <!-- CONNECTOR 1→2 -->
+      <div class="flow-connector">
+        <div class="conv-pct" id="fConv1">—</div>
+        <div class="conv-arrow">
+          <svg viewBox="0 0 48 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 6 H40 M34 1 L42 6 L34 11" stroke="var(--text2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- STEP 2: Opt-in / Lead -->
+      <div class="flow-step">
+        <div class="flow-metric">
+          <div class="flow-metric-val purple" id="fVal2">—</div>
+          <div class="flow-metric-label">Leads</div>
+          <div class="flow-metric-sub" id="fSub2"></div>
+        </div>
+        <div class="page-card purple">
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#ff5f57"></div>
+            <div class="browser-dot" style="background:#febc2e"></div>
+            <div class="browser-dot" style="background:#28c840"></div>
+            <div class="browser-url"></div>
+          </div>
+          <div class="page-body">
+            <div class="page-label">Opt-in / Lead</div>
+            <div class="sk w80" style="margin-bottom:10px;background:rgba(167,139,250,0.15);height:10px"></div>
+            <div class="sk w100" style="height:22px;border-radius:5px;background:rgba(255,255,255,0.05);margin-bottom:6px"></div>
+            <div class="sk w100" style="height:22px;border-radius:5px;background:rgba(255,255,255,0.05);margin-bottom:6px"></div>
+            <div class="sk cta" style="background:rgba(167,139,250,0.25);color:var(--accent)">QUERO AGORA →</div>
+          </div>
+        </div>
+        <div class="step-name">Captura de Lead</div>
+        <div class="step-url">hotfy.digital/optin</div>
+      </div>
+
+      <!-- CONNECTOR 2→3 -->
+      <div class="flow-connector">
+        <div class="conv-pct" id="fConv2">—</div>
+        <div class="conv-arrow">
+          <svg viewBox="0 0 48 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 6 H40 M34 1 L42 6 L34 11" stroke="var(--text2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- STEP 3: Checkout / CTA -->
+      <div class="flow-step">
+        <div class="flow-metric">
+          <div class="flow-metric-val yellow" id="fVal3">—</div>
+          <div class="flow-metric-label">Cliques CTA</div>
+          <div class="flow-metric-sub" id="fSub3"></div>
+        </div>
+        <div class="page-card yellow">
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#ff5f57"></div>
+            <div class="browser-dot" style="background:#febc2e"></div>
+            <div class="browser-dot" style="background:#28c840"></div>
+            <div class="browser-url"></div>
+          </div>
+          <div class="page-body">
+            <div class="page-label">Checkout</div>
+            <div class="sk w60" style="background:rgba(251,191,36,0.15);height:8px;margin-bottom:8px"></div>
+            <div style="display:flex;gap:5px;margin-bottom:5px">
+              <div class="sk" style="flex:1;height:18px;border-radius:4px"></div>
+              <div class="sk" style="flex:1;height:18px;border-radius:4px"></div>
+            </div>
+            <div class="sk w100" style="height:18px;border-radius:4px;margin-bottom:5px"></div>
+            <div class="sk cta" style="background:rgba(251,191,36,0.25);color:var(--yellow)">COMPRAR AGORA 🔒</div>
+          </div>
+        </div>
+        <div class="step-name">Página de Checkout</div>
+        <div class="step-url">checkout.hotmart.com</div>
+      </div>
+
+      <!-- CONNECTOR 3→4 -->
+      <div class="flow-connector">
+        <div class="conv-pct" id="fConv3">—</div>
+        <div class="conv-arrow">
+          <svg viewBox="0 0 48 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 6 H40 M34 1 L42 6 L34 11" stroke="var(--text2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- STEP 4: Obrigado / Venda -->
+      <div class="flow-step">
+        <div class="flow-metric">
+          <div class="flow-metric-val green" id="fVal4">—</div>
+          <div class="flow-metric-label">Vendas</div>
+          <div class="flow-metric-sub" id="fSub4"></div>
+        </div>
+        <div class="page-card green">
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#ff5f57"></div>
+            <div class="browser-dot" style="background:#febc2e"></div>
+            <div class="browser-dot" style="background:#28c840"></div>
+            <div class="browser-url"></div>
+          </div>
+          <div class="page-body">
+            <div class="page-label">Obrigado</div>
+            <div style="text-align:center;padding:12px 0 6px">
+              <div style="font-size:22px">✅</div>
+              <div class="sk w80" style="margin:8px auto 5px;height:8px;background:rgba(52,211,153,0.2)"></div>
+              <div class="sk w60" style="margin:0 auto;background:rgba(52,211,153,0.1)"></div>
+            </div>
+            <div class="sk w100" style="height:4px;margin-top:8px;background:rgba(52,211,153,0.15)"></div>
+          </div>
+        </div>
+        <div class="step-name">Página de Obrigado</div>
+        <div class="step-url">hotmart.com/obrigado</div>
+      </div>
+
+    </div><!-- /flow-wrapper -->
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-row">
+
+      <!-- Resumo KPIs -->
+      <div class="bottom-card">
+        <div class="bottom-card-title">📈 Resumo</div>
+        <div class="kpi-row">
+          <div class="kpi-item">
+            <div class="kpi-item-label">Receita total</div>
+            <div class="kpi-item-val" id="kpiReceita">—</div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-item-label">Vendas</div>
+            <div class="kpi-item-val" id="kpiVendas">—</div>
+          </div>
+          <div class="kpi-item" style="margin-top:10px">
+            <div class="kpi-item-label">Ticket médio</div>
+            <div class="kpi-item-val" id="kpiTicket">—</div>
+          </div>
+          <div class="kpi-item" style="margin-top:10px">
+            <div class="kpi-item-label">Conv. geral</div>
+            <div class="kpi-item-val" id="kpiConv">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Taxas de conversão -->
+      <div class="bottom-card">
+        <div class="bottom-card-title">📉 Taxas por etapa</div>
+        <div id="convRates"></div>
+      </div>
+
+    </div>
+
+    <!-- Campanhas -->
+    <div class="bottom-card" style="margin-top:12px">
+      <div class="bottom-card-title">🏆 Por campanha</div>
+      <div id="campTable">
+        <p class="install-hint">
+          Instale o pixel nas páginas para ver dados por campanha:<br>
+          <code>&lt;script src="https://hotfy.digital/pixel.js"&gt;&lt;/script&gt;</code>
+        </p>
       </div>
     </div>
 
-    <!-- COLUNA DIREITA -->
-    <div class="right-col">
-
-      <!-- KPIs -->
-      <div class="card">
-        <div class="card-title">📈 Resumo</div>
-        <div class="kpi-grid">
-          <div class="kpi-mini">
-            <div class="kpi-mini-label">Receita</div>
-            <div class="kpi-mini-val" id="kpiReceita" style="color:var(--green)">—</div>
-          </div>
-          <div class="kpi-mini">
-            <div class="kpi-mini-label">Vendas</div>
-            <div class="kpi-mini-val" id="kpiVendas" style="color:var(--blue)">—</div>
-          </div>
-          <div class="kpi-mini">
-            <div class="kpi-mini-label">Ticket Médio</div>
-            <div class="kpi-mini-val" id="kpiTicket" style="color:var(--yellow)">—</div>
-          </div>
-          <div class="kpi-mini">
-            <div class="kpi-mini-label">Conv. Geral</div>
-            <div class="kpi-mini-val" id="kpiConv" style="color:var(--accent)">—</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAXAS DE CONVERSÃO -->
-      <div class="card">
-        <div class="card-title">📉 Taxas por etapa</div>
-        <div id="convRates">
-          <!-- preenchido por JS -->
-        </div>
-      </div>
-
-      <!-- TOP CAMPANHAS -->
-      <div class="card">
-        <div class="card-title">🏆 Por campanha</div>
-        <div id="campTable">
-          <div style="text-align:center;padding:20px;color:var(--text2);font-size:12px;line-height:1.8">
-            Instale o pixel nas páginas para ver dados por campanha:<br>
-            <code style="color:var(--accent);font-size:11px">&lt;script src="https://hotfy.digital/pixel.js"&gt;&lt;/script&gt;</code>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
+  </div><!-- /main -->
+</div><!-- /appWrap -->
 
 <script>
 const API = '';
@@ -276,15 +509,11 @@ function doLogin() {
     }
   }).catch(()=>{ document.getElementById('loginErr').textContent='Erro de conexão'; });
 }
-
 function logout() {
   localStorage.removeItem('pa_token');
   localStorage.removeItem('pa_user');
   location.reload();
 }
-
-function mobileCheck() { window.location.href='/dashboard'; }
-
 function init() {
   document.getElementById('loginWrap').style.display = 'none';
   document.getElementById('appWrap').style.display = 'block';
@@ -293,8 +522,6 @@ function init() {
   setupPeriod();
   load();
 }
-
-// Auto-login
 const _t = localStorage.getItem('pa_token');
 if (_t) { token = _t; init(); }
 
@@ -314,111 +541,99 @@ function setupPeriod() {
 function load() {
   const h = {'Authorization':'Bearer '+token};
   const params = new URLSearchParams({period});
-
   Promise.all([
     fetch(API+'/api/webhooks/events?'+params, {headers:h}).then(r=>r.json()),
-    fetch(API+'/api/pixel/stats?'+params, {headers:h}).then(r=>r.json()).catch(()=>({}))
+    fetch(API+'/api/pixel/stats?'+params,     {headers:h}).then(r=>r.json()).catch(()=>({}))
   ]).then(([eventos, pix]) => {
     allVendas = (eventos.events||[]).filter(e =>
       ['purchase','PURCHASE_APPROVED','PURCHASE_COMPLETE'].includes(e.event_type)
     );
     render(pix);
-    document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('lastUpdate').textContent =
+      'Atualizado: ' + new Date().toLocaleTimeString('pt-BR');
   });
 }
 
-// ─── RENDER ───
-function fmtNum(n) { return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
-function fmtUSD(n) { return 'US$ ' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
-function pct(a,b) { return b>0 ? (a/b*100).toFixed(1)+'%' : '—'; }
+// ─── HELPERS ───
+function fmtNum(n) {
+  if (!n && n !== 0) return '—';
+  return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n);
+}
+function fmtUSD(n) {
+  return 'US$ ' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+function pct(a, b) {
+  return b > 0 ? (a/b*100).toFixed(1)+'%' : '—';
+}
 
+// ─── RENDER ───
 function render(pix) {
   const visitas = pix.pageviews || 0;
   const leads   = pix.leads    || 0;
   const cliques = pix.clicks   || 0;
   const vendas  = allVendas.length;
-  const receita = allVendas.reduce((s,e)=>s+(e.value||0),0);
-  const ticket  = vendas>0 ? receita/vendas : 0;
+  const receita = allVendas.reduce((s,e)=>s+(e.value||0), 0);
+  const ticket  = vendas > 0 ? receita/vendas : 0;
 
-  // KPIs
+  // Valores nas métricas de cada etapa
+  document.getElementById('fVal1').textContent = fmtNum(visitas);
+  document.getElementById('fVal2').textContent = fmtNum(leads);
+  document.getElementById('fVal3').textContent = fmtNum(cliques);
+  document.getElementById('fVal4').textContent = fmtNum(vendas);
+
+  // Sub-info (% do total)
+  document.getElementById('fSub1').textContent = '100% do topo';
+  document.getElementById('fSub2').textContent = visitas > 0 ? pct(leads,   visitas)+' do topo' : '';
+  document.getElementById('fSub3').textContent = visitas > 0 ? pct(cliques, visitas)+' do topo' : '';
+  document.getElementById('fSub4').textContent = visitas > 0 ? pct(vendas,  visitas)+' do topo' : '';
+
+  // Conversões entre etapas
+  document.getElementById('fConv1').textContent = pct(leads,   visitas);
+  document.getElementById('fConv2').textContent = pct(cliques, leads);
+  document.getElementById('fConv3').textContent = pct(vendas,  cliques);
+
+  // KPIs resumo
   document.getElementById('kpiReceita').textContent = fmtUSD(receita);
   document.getElementById('kpiVendas').textContent  = vendas;
   document.getElementById('kpiTicket').textContent  = fmtUSD(ticket);
   document.getElementById('kpiConv').textContent    = pct(vendas, visitas||1);
 
-  // SVG — valores
-  document.getElementById('svgV1').textContent = fmtNum(visitas) || '—';
-  document.getElementById('svgV2').textContent = fmtNum(leads)   || '—';
-  document.getElementById('svgV3').textContent = fmtNum(cliques) || '—';
-  document.getElementById('svgV4').textContent = fmtNum(vendas)  || '0';
-
-  // SVG — percentuais entre etapas
-  document.getElementById('svgP1').textContent = pct(leads,  visitas);
-  document.getElementById('svgP2').textContent = pct(cliques, leads);
-  document.getElementById('svgP3').textContent = pct(vendas,  cliques);
-
-  // SVG — opacidade das camadas (quem não tem dado fica mais escuro)
-  const vals = [visitas, leads, cliques, vendas];
-  const maxV = Math.max(...vals, 1);
-  ['svgN1','svgN2','svgN3','svgN4'].forEach((id,i) => {
-    document.getElementById(id).setAttribute('opacity', 0.35 + 0.65*(vals[i]/maxV));
-  });
-
-  // Steps detalhados
+  // Taxas detalhadas
   const colors = ['var(--blue)','var(--accent)','var(--yellow)','var(--green)'];
-  const steps  = [
-    {icon:'👁️', label:'Visitas',     val:visitas, c:colors[0]},
-    {icon:'📧', label:'Leads',       val:leads,   c:colors[1]},
-    {icon:'🖱️', label:'Cliques CTA', val:cliques, c:colors[2]},
-    {icon:'💰', label:'Vendas',      val:vendas,  c:colors[3]},
-  ];
-  document.getElementById('funilSteps').innerHTML = steps.map((s,i) => {
-    const w = maxV>0 ? Math.max(2, s.val/maxV*100) : 2;
-    const p = i===0 ? 100 : (steps[0].val>0 ? (s.val/steps[0].val*100).toFixed(1) : 0);
-    return `
-      <div class="funil-step">
-        <div class="funil-step-icon" style="background:${s.c}22">${s.icon}</div>
-        <div class="funil-step-info">
-          <div class="funil-step-label">${s.label}</div>
-          <div class="funil-step-val" style="color:${s.c}">${fmtNum(s.val)||'—'}</div>
-          <div class="funil-step-bar-wrap"><div class="funil-step-bar" style="width:${w}%;background:${s.c}"></div></div>
-        </div>
-        <div class="funil-step-pct" style="color:${s.c}">${i>0?p+'%':''}</div>
-      </div>
-    `;
-  }).join('');
-
-  // Taxas de conversão
   const convs = [
-    {label:'Visita → Lead',   n:leads,   d:visitas, c:colors[1]},
-    {label:'Lead → Clique',   n:cliques, d:leads,   c:colors[2]},
-    {label:'Clique → Venda',  n:vendas,  d:cliques, c:colors[3]},
-    {label:'Visita → Venda',  n:vendas,  d:visitas, c:colors[0]},
+    {label:'Visita → Lead',     n:leads,   d:visitas, c:colors[1]},
+    {label:'Lead → Clique CTA', n:cliques, d:leads,   c:colors[2]},
+    {label:'Clique → Venda',    n:vendas,  d:cliques, c:colors[3]},
+    {label:'Visita → Venda',    n:vendas,  d:visitas, c:colors[0]},
   ];
   document.getElementById('convRates').innerHTML = convs.map(c => {
-    const p = c.d>0 ? Math.min(100, c.n/c.d*100) : 0;
+    const p = c.d > 0 ? Math.min(100, c.n/c.d*100) : 0;
     return `
       <div class="conv-row">
         <span class="conv-label">${c.label}</span>
         <span class="conv-val" style="color:${c.c}">${p.toFixed(1)}%</span>
       </div>
-      <div class="conv-bar-wrap"><div class="conv-bar" style="width:${p.toFixed(1)}%;background:${c.c}"></div></div>
-    `;
+      <div class="conv-bar-wrap">
+        <div class="conv-bar" style="width:${p.toFixed(1)}%;background:${c.c}"></div>
+      </div>`;
   }).join('');
 
   // Campanhas
   const camps = pix.campaigns||[];
-  if(camps.length) {
+  if (camps.length) {
     document.getElementById('campTable').innerHTML = camps.slice(0,8).map(c => `
       <div class="camp-row">
         <span class="camp-name">${esc(c.utm_campaign||'Sem campanha')}</span>
         <span class="camp-badge">${c.views}v</span>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 }
 
-function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
 </script>
 </body>
 </html>
