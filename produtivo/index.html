@@ -183,7 +183,7 @@ function TaskPanel({tasks,setTasks}){
     return true;
   }).sort((a,b)=>{
     if(a.done!==b.done)return a.done?1:-1;
-    return(pOrder[a.priority]||1)-(pOrder[b.priority]||1);
+    var p=(pOrder[a.priority]||1)-(pOrder[b.priority]||1);return p!==0?p:a.id-b.id;
   });
 
   return(
