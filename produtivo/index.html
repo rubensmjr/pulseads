@@ -178,7 +178,7 @@ function TaskPanel({tasks,setTasks}){
 
   const pOrder={alta:0,media:1,baixa:2};
   const filtered=tasks.filter(t=>{
-    if(filter==="done")return t.done;
+    if(filter==="done")return t.done;if(filter==="all")return!t.done;
     if(filter==="pending")return!t.done;
     return true;
   }).sort((a,b)=>{
